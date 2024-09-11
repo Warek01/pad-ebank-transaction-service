@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package transaction_service;
+
+import "currency.proto";
+
+service TransactionService {
+  rpc TransferCurrency (TransferData) returns (TransferResult);
+  rpc DepositCurrency (DepositData) returns (DepositResult);
+  rpc WithdrawCurrency (WithdrawData) returns (WithdrawResult);
+  rpc GetHistory (GetHistoryOptions) returns (TransactionsHistory);
+  rpc CancelTransaction (CancelTransactionOptions) returns (CancelTransactionResult);
+}
+
+message TransferData {
+  shared.Currency currency = 1;
+  int32 amount = 2;
+  string source_card_code = 3;
+  string target_card_code = 4;
+}
+
+message TransferResult {
+  bool success = 1;
+}
+
+message DepositData {
+  shared.Currency currency = 1;
+  int32 amount = 2;
+  string card_code = 3;
+}
+
+message DepositResult {
+  bool success = 1;
+}
+
+message WithdrawData {
+  shared.Currency currency = 1;
+  int32 amount = 2;
+  string card_code = 3;
+}
+
+message WithdrawResult {
+  bool success = 1;
+}
+
+message GetHistoryOptions {
+  string card_code = 1;
+  int32 month = 2;
+  int32 year = 3;
+}
+
+enum TransactionType {
+  DEPOSIT = 0;
+  WITHDRAW = 1;
+  TRANSFER = 2;
+}
+
+message Transaction {
+  int32 transaction_id = 1;
+  TransactionType type = 2;
+  string source_card_code = 3;
+  string target_card_code = 4;
+  int32 amount = 5;
+  int64 unix_timestamp = 6;
+}
+
+message TransactionsHistory {
+  repeated Transaction transactions = 1;
+}
+
+message CancelTransactionOptions {
+  int32 transaction_id = 1;
+}
+
+message CancelTransactionResult {
+  bool success = 1;
+}

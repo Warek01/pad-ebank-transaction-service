@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package shared;
+
+enum ServiceErrorCode {
+  UNKNOWN = 0;
+
+  BAD_REQUEST = 400;
+  UNAUTHORIZED = 401;
+  NOT_FOUND = 404;
+  CONFLICT = 409;
+
+  INTERNAL = 500;
+}
+
+message ServiceError {
+  ServiceErrorCode code = 1;
+  string message = 2;
+}

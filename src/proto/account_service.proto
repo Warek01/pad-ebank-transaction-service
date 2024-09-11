@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package account_service;
+
+import "currency.proto";
+import "error.proto";
+
+service AccountService {
+  rpc Login (LoginCredentials) returns (AuthResult);
+  rpc Register (RegisterCredentials) returns (AuthResult);
+  rpc GetProfile (GetProfileOptions) returns (GetProfileResult);
+  rpc AddCurrency (AddCurrencyOptions) returns (AddCurrencyResult);
+  rpc CanPerformTransaction (TransactionData) returns (CanPerformTransactionResult);
+  rpc ChangeCurrency (ChangeCurrencyOptions) returns (ChangeCurrencyResult);
+  rpc BlockCard (CardIdentifier) returns (BlockCardResult);
+  rpc UnblockCard (CardIdentifier) returns (UnblockCardResult);
+}
+
+message LoginCredentials {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthResult {
+  message AuthCredentials {
+    string email = 1;
+    string full_name = 2;
+  }
+
+  oneof result {
+    AuthCredentials credentials = 1;
+    shared.ServiceError error = 2;
+  }
+}
+
+message RegisterCredentials {
+  string email = 1;
+  string password = 2;
+  string full_name = 3;
+}
+
+message GetProfileOptions {
+  string email = 1;
+}
+
+
+message GetProfileResult {
+  message Profile {
+    string email = 1;
+    string full_name = 2;
+  }
+
+  oneof result {
+    Profile profile = 1;
+    shared.ServiceError error = 2;
+  }
+}
+
+message AddCurrencyOptions {
+  shared.Currency currency = 1;
+  int32 amount = 2;
+  CardIdentifier card_identifier = 3;
+}
+
+message AddCurrencyResult {
+  shared.ServiceError error = 1;
+}
+
+message TransactionData {
+  shared.Currency currency = 1;
+  int32 amount = 2;
+  CardIdentifier card_identifier = 3;
+}
+
+message CanPerformTransactionResult {
+  oneof result {
+    bool can_perform = 1;
+    shared.ServiceError error = 2;
+  }
+}
+
+message ChangeCurrencyOptions {
+  shared.Currency currency = 1;
+  CardIdentifier card_identifier = 2;
+}
+
+message ChangeCurrencyResult {
+  shared.ServiceError error = 1;
+}
+
+message CardIdentifier {
+  string card_code = 1;
+}
+
+message BlockCardResult {
+  shared.ServiceError error = 1;
+}
+
+message UnblockCardResult {
+  shared.ServiceError error = 1;
+}
