@@ -5,12 +5,12 @@
 // source: transacton_service.proto
 
 /* eslint-disable */
-import { Metadata } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
-import { Currency } from "./currency";
+import { Metadata } from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
+import { Currency, ServiceError } from './shared';
 
-export const protobufPackage = "transaction_service";
+export const protobufPackage = 'transaction_service';
 
 export enum TransactionType {
   DEPOSIT = 0,
@@ -22,12 +22,12 @@ export enum TransactionType {
 export interface TransferData {
   currency: Currency;
   amount: number;
-  sourceCardCode: string;
-  targetCardCode: string;
+  srcCardCode: string;
+  dstCardCode: string;
 }
 
 export interface TransferResult {
-  success: boolean;
+  error?: ServiceError | null;
 }
 
 export interface DepositData {
@@ -37,7 +37,7 @@ export interface DepositData {
 }
 
 export interface DepositResult {
-  success: boolean;
+  error?: ServiceError | null;
 }
 
 export interface WithdrawData {
@@ -47,7 +47,7 @@ export interface WithdrawData {
 }
 
 export interface WithdrawResult {
-  success: boolean;
+  error?: ServiceError | null;
 }
 
 export interface GetHistoryOptions {
@@ -57,38 +57,54 @@ export interface GetHistoryOptions {
 }
 
 export interface Transaction {
-  transactionId: number;
+  transactionId: string;
   type: TransactionType;
-  sourceCardCode: string;
-  targetCardCode: string;
+  srcCardCode: string;
+  dstCardCode: string;
   amount: number;
-  unixTimestamp: number;
+  date: string;
 }
 
 export interface TransactionsHistory {
   transactions: Transaction[];
+  error?: ServiceError | null;
 }
 
 export interface CancelTransactionOptions {
-  transactionId: number;
+  transactionId: string;
 }
 
 export interface CancelTransactionResult {
-  success: boolean;
+  error?: ServiceError | null;
 }
 
-export const TRANSACTION_SERVICE_PACKAGE_NAME = "transaction_service";
+export const TRANSACTION_SERVICE_PACKAGE_NAME = 'transaction_service';
 
 export interface TransactionServiceClient {
-  transferCurrency(request: TransferData, metadata?: Metadata): Observable<TransferResult>;
+  transferCurrency(
+    request: TransferData,
+    metadata?: Metadata,
+  ): Observable<TransferResult>;
 
-  depositCurrency(request: DepositData, metadata?: Metadata): Observable<DepositResult>;
+  depositCurrency(
+    request: DepositData,
+    metadata?: Metadata,
+  ): Observable<DepositResult>;
 
-  withdrawCurrency(request: WithdrawData, metadata?: Metadata): Observable<WithdrawResult>;
+  withdrawCurrency(
+    request: WithdrawData,
+    metadata?: Metadata,
+  ): Observable<WithdrawResult>;
 
-  getHistory(request: GetHistoryOptions, metadata?: Metadata): Observable<TransactionsHistory>;
+  getHistory(
+    request: GetHistoryOptions,
+    metadata?: Metadata,
+  ): Observable<TransactionsHistory>;
 
-  cancelTransaction(request: CancelTransactionOptions, metadata?: Metadata): Observable<CancelTransactionResult>;
+  cancelTransaction(
+    request: CancelTransactionOptions,
+    metadata?: Metadata,
+  ): Observable<CancelTransactionResult>;
 }
 
 export interface TransactionServiceController {
@@ -110,33 +126,53 @@ export interface TransactionServiceController {
   getHistory(
     request: GetHistoryOptions,
     metadata?: Metadata,
-  ): Promise<TransactionsHistory> | Observable<TransactionsHistory> | TransactionsHistory;
+  ):
+    | Promise<TransactionsHistory>
+    | Observable<TransactionsHistory>
+    | TransactionsHistory;
 
   cancelTransaction(
     request: CancelTransactionOptions,
     metadata?: Metadata,
-  ): Promise<CancelTransactionResult> | Observable<CancelTransactionResult> | CancelTransactionResult;
+  ):
+    | Promise<CancelTransactionResult>
+    | Observable<CancelTransactionResult>
+    | CancelTransactionResult;
 }
 
 export function TransactionServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "transferCurrency",
-      "depositCurrency",
-      "withdrawCurrency",
-      "getHistory",
-      "cancelTransaction",
+      'transferCurrency',
+      'depositCurrency',
+      'withdrawCurrency',
+      'getHistory',
+      'cancelTransaction',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("TransactionService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('TransactionService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("TransactionService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('TransactionService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const TRANSACTION_SERVICE_NAME = "TransactionService";
+export const TRANSACTION_SERVICE_NAME = 'TransactionService';

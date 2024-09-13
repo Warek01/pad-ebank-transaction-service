@@ -17,3 +17,9 @@ message ServiceError {
   ServiceErrorCode code = 1;
   string message = 2;
 }
+
+enum Currency {
+  MDL = 0;
+  USD = 1;
+  EUR = 2;
+}

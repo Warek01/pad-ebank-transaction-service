@@ -6,10 +6,10 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import path from 'path';
 
 import { ACCOUNT_SERVICE_PACKAGE_NAME } from '@ebank-transaction/generated/proto/account_service';
-
-import { AppEnv } from './types/app-env';
-import { AppController } from './app.controller';
-import { StatusModule } from './status/status.module';
+import { HealthModule } from '@ebank-transaction/health/health-module';
+import { TransactionModule } from '@ebank-transaction/transaction/transaction.module';
+import { AppController } from '@ebank-transaction/app.controller';
+import { AppEnv } from '@ebank-transaction/types/app-env';
 
 @Module({
   imports: [
@@ -33,20 +33,29 @@ import { StatusModule } from './status/status.module';
         namingStrategy: new SnakeNamingStrategy(),
       }),
     }),
-    ClientsModule.register({
+    ClientsModule.registerAsync({
+      isGlobal: true,
       clients: [
         {
           name: ACCOUNT_SERVICE_PACKAGE_NAME,
-          options: {
-            package: ACCOUNT_SERVICE_PACKAGE_NAME,
-            protoPath: path.join(__dirname, 'proto', 'account_service.proto'),
-            url: 'account-service:3000',
-          },
-          transport: Transport.GRPC,
+          inject: [ConfigService],
+          useFactory: (conf: ConfigService<AppEnv>) => ({
+            name: ACCOUNT_SERVICE_PACKAGE_NAME,
+            options: {
+              package: ACCOUNT_SERVICE_PACKAGE_NAME,
+              protoPath: path.join(__dirname, 'proto', 'account_service.proto'),
+              loader: {
+                includeDirs: [path.join(__dirname, 'proto')],
+              },
+              url: conf.get('ACCOUNT_SERVICE_GRPC_URL'),
+            },
+            transport: Transport.GRPC,
+          }),
         },
       ],
     }),
-    StatusModule,
+    HealthModule,
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [],

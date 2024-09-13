@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package transaction_service;
 
-import "currency.proto";
+import "shared.proto";
 
 service TransactionService {
   rpc TransferCurrency (TransferData) returns (TransferResult);
@@ -15,12 +15,12 @@ service TransactionService {
 message TransferData {
   shared.Currency currency = 1;
   int32 amount = 2;
-  string source_card_code = 3;
-  string target_card_code = 4;
+  string src_card_code = 3;
+  string dst_card_code = 4;
 }
 
 message TransferResult {
-  bool success = 1;
+  shared.ServiceError error = 1;
 }
 
 message DepositData {
@@ -30,7 +30,7 @@ message DepositData {
 }
 
 message DepositResult {
-  bool success = 1;
+  shared.ServiceError error = 1;
 }
 
 message WithdrawData {
@@ -40,7 +40,7 @@ message WithdrawData {
 }
 
 message WithdrawResult {
-  bool success = 1;
+  shared.ServiceError error = 1;
 }
 
 message GetHistoryOptions {
@@ -56,22 +56,23 @@ enum TransactionType {
 }
 
 message Transaction {
-  int32 transaction_id = 1;
+  string transaction_id = 1;
   TransactionType type = 2;
-  string source_card_code = 3;
-  string target_card_code = 4;
+  string src_card_code = 3;
+  string dst_card_code = 4;
   int32 amount = 5;
-  int64 unix_timestamp = 6;
+  string date = 6;
 }
 
 message TransactionsHistory {
   repeated Transaction transactions = 1;
+  shared.ServiceError error = 2;
 }
 
 message CancelTransactionOptions {
-  int32 transaction_id = 1;
+  string transaction_id = 1;
 }
 
 message CancelTransactionResult {
-  bool success = 1;
+  shared.ServiceError error = 1;
 }

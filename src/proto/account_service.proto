@@ -2,8 +2,7 @@ syntax = "proto3";
 
 package account_service;
 
-import "currency.proto";
-import "error.proto";
+import "shared.proto";
 
 service AccountService {
   rpc Login (LoginCredentials) returns (AuthResult);
@@ -21,12 +20,12 @@ message LoginCredentials {
   string password = 2;
 }
 
-message AuthResult {
-  message AuthCredentials {
-    string email = 1;
-    string full_name = 2;
-  }
+message AuthCredentials {
+  string email = 1;
+  string full_name = 2;
+}
 
+message AuthResult {
   oneof result {
     AuthCredentials credentials = 1;
     shared.ServiceError error = 2;
@@ -43,13 +42,12 @@ message GetProfileOptions {
   string email = 1;
 }
 
+message Profile {
+  string email = 1;
+  string full_name = 2;
+}
 
 message GetProfileResult {
-  message Profile {
-    string email = 1;
-    string full_name = 2;
-  }
-
   oneof result {
     Profile profile = 1;
     shared.ServiceError error = 2;
@@ -59,7 +57,7 @@ message GetProfileResult {
 message AddCurrencyOptions {
   shared.Currency currency = 1;
   int32 amount = 2;
-  CardIdentifier card_identifier = 3;
+  string card_code = 3;
 }
 
 message AddCurrencyResult {
@@ -69,7 +67,7 @@ message AddCurrencyResult {
 message TransactionData {
   shared.Currency currency = 1;
   int32 amount = 2;
-  CardIdentifier card_identifier = 3;
+  string card_code = 3;
 }
 
 message CanPerformTransactionResult {
@@ -81,7 +79,7 @@ message CanPerformTransactionResult {
 
 message ChangeCurrencyOptions {
   shared.Currency currency = 1;
-  CardIdentifier card_identifier = 2;
+  string card_code = 2;
 }
 
 message ChangeCurrencyResult {

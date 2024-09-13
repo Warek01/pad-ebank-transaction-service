@@ -5,27 +5,26 @@
 // source: account_service.proto
 
 /* eslint-disable */
-import { Metadata } from "@grpc/grpc-js";
-import { GrpcMethod, GrpcStreamMethod } from "@nestjs/microservices";
-import { Observable } from "rxjs";
-import { Currency } from "./currency";
-import { ServiceError } from "./error";
+import { Metadata } from '@grpc/grpc-js';
+import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
+import { Observable } from 'rxjs';
+import { Currency, ServiceError } from './shared';
 
-export const protobufPackage = "account_service";
+export const protobufPackage = 'account_service';
 
 export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-export interface AuthResult {
-  credentials?: AuthResult_AuthCredentials | null;
-  error?: ServiceError | null;
-}
-
-export interface AuthResult_AuthCredentials {
+export interface AuthCredentials {
   email: string;
   fullName: string;
+}
+
+export interface AuthResult {
+  credentials?: AuthCredentials | null;
+  error?: ServiceError | null;
 }
 
 export interface RegisterCredentials {
@@ -38,20 +37,20 @@ export interface GetProfileOptions {
   email: string;
 }
 
-export interface GetProfileResult {
-  profile?: GetProfileResult_Profile | null;
-  error?: ServiceError | null;
-}
-
-export interface GetProfileResult_Profile {
+export interface Profile {
   email: string;
   fullName: string;
+}
+
+export interface GetProfileResult {
+  profile?: Profile | null;
+  error?: ServiceError | null;
 }
 
 export interface AddCurrencyOptions {
   currency: Currency;
   amount: number;
-  cardIdentifier?: CardIdentifier | null;
+  cardCode: string;
 }
 
 export interface AddCurrencyResult {
@@ -61,7 +60,7 @@ export interface AddCurrencyResult {
 export interface TransactionData {
   currency: Currency;
   amount: number;
-  cardIdentifier?: CardIdentifier | null;
+  cardCode: string;
 }
 
 export interface CanPerformTransactionResult {
@@ -71,7 +70,7 @@ export interface CanPerformTransactionResult {
 
 export interface ChangeCurrencyOptions {
   currency: Currency;
-  cardIdentifier?: CardIdentifier | null;
+  cardCode: string;
 }
 
 export interface ChangeCurrencyResult {
@@ -90,28 +89,52 @@ export interface UnblockCardResult {
   error?: ServiceError | null;
 }
 
-export const ACCOUNT_SERVICE_PACKAGE_NAME = "account_service";
+export const ACCOUNT_SERVICE_PACKAGE_NAME = 'account_service';
 
 export interface AccountServiceClient {
   login(request: LoginCredentials, metadata?: Metadata): Observable<AuthResult>;
 
-  register(request: RegisterCredentials, metadata?: Metadata): Observable<AuthResult>;
+  register(
+    request: RegisterCredentials,
+    metadata?: Metadata,
+  ): Observable<AuthResult>;
 
-  getProfile(request: GetProfileOptions, metadata?: Metadata): Observable<GetProfileResult>;
+  getProfile(
+    request: GetProfileOptions,
+    metadata?: Metadata,
+  ): Observable<GetProfileResult>;
 
-  addCurrency(request: AddCurrencyOptions, metadata?: Metadata): Observable<AddCurrencyResult>;
+  addCurrency(
+    request: AddCurrencyOptions,
+    metadata?: Metadata,
+  ): Observable<AddCurrencyResult>;
 
-  canPerformTransaction(request: TransactionData, metadata?: Metadata): Observable<CanPerformTransactionResult>;
+  canPerformTransaction(
+    request: TransactionData,
+    metadata?: Metadata,
+  ): Observable<CanPerformTransactionResult>;
 
-  changeCurrency(request: ChangeCurrencyOptions, metadata?: Metadata): Observable<ChangeCurrencyResult>;
+  changeCurrency(
+    request: ChangeCurrencyOptions,
+    metadata?: Metadata,
+  ): Observable<ChangeCurrencyResult>;
 
-  blockCard(request: CardIdentifier, metadata?: Metadata): Observable<BlockCardResult>;
+  blockCard(
+    request: CardIdentifier,
+    metadata?: Metadata,
+  ): Observable<BlockCardResult>;
 
-  unblockCard(request: CardIdentifier, metadata?: Metadata): Observable<UnblockCardResult>;
+  unblockCard(
+    request: CardIdentifier,
+    metadata?: Metadata,
+  ): Observable<UnblockCardResult>;
 }
 
 export interface AccountServiceController {
-  login(request: LoginCredentials, metadata?: Metadata): Promise<AuthResult> | Observable<AuthResult> | AuthResult;
+  login(
+    request: LoginCredentials,
+    metadata?: Metadata,
+  ): Promise<AuthResult> | Observable<AuthResult> | AuthResult;
 
   register(
     request: RegisterCredentials,
@@ -121,22 +144,34 @@ export interface AccountServiceController {
   getProfile(
     request: GetProfileOptions,
     metadata?: Metadata,
-  ): Promise<GetProfileResult> | Observable<GetProfileResult> | GetProfileResult;
+  ):
+    | Promise<GetProfileResult>
+    | Observable<GetProfileResult>
+    | GetProfileResult;
 
   addCurrency(
     request: AddCurrencyOptions,
     metadata?: Metadata,
-  ): Promise<AddCurrencyResult> | Observable<AddCurrencyResult> | AddCurrencyResult;
+  ):
+    | Promise<AddCurrencyResult>
+    | Observable<AddCurrencyResult>
+    | AddCurrencyResult;
 
   canPerformTransaction(
     request: TransactionData,
     metadata?: Metadata,
-  ): Promise<CanPerformTransactionResult> | Observable<CanPerformTransactionResult> | CanPerformTransactionResult;
+  ):
+    | Promise<CanPerformTransactionResult>
+    | Observable<CanPerformTransactionResult>
+    | CanPerformTransactionResult;
 
   changeCurrency(
     request: ChangeCurrencyOptions,
     metadata?: Metadata,
-  ): Promise<ChangeCurrencyResult> | Observable<ChangeCurrencyResult> | ChangeCurrencyResult;
+  ):
+    | Promise<ChangeCurrencyResult>
+    | Observable<ChangeCurrencyResult>
+    | ChangeCurrencyResult;
 
   blockCard(
     request: CardIdentifier,
@@ -146,31 +181,48 @@ export interface AccountServiceController {
   unblockCard(
     request: CardIdentifier,
     metadata?: Metadata,
-  ): Promise<UnblockCardResult> | Observable<UnblockCardResult> | UnblockCardResult;
+  ):
+    | Promise<UnblockCardResult>
+    | Observable<UnblockCardResult>
+    | UnblockCardResult;
 }
 
 export function AccountServiceControllerMethods() {
   return function (constructor: Function) {
     const grpcMethods: string[] = [
-      "login",
-      "register",
-      "getProfile",
-      "addCurrency",
-      "canPerformTransaction",
-      "changeCurrency",
-      "blockCard",
-      "unblockCard",
+      'login',
+      'register',
+      'getProfile',
+      'addCurrency',
+      'canPerformTransaction',
+      'changeCurrency',
+      'blockCard',
+      'unblockCard',
     ];
     for (const method of grpcMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcMethod("AccountService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcMethod('AccountService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
     const grpcStreamMethods: string[] = [];
     for (const method of grpcStreamMethods) {
-      const descriptor: any = Reflect.getOwnPropertyDescriptor(constructor.prototype, method);
-      GrpcStreamMethod("AccountService", method)(constructor.prototype[method], method, descriptor);
+      const descriptor: any = Reflect.getOwnPropertyDescriptor(
+        constructor.prototype,
+        method,
+      );
+      GrpcStreamMethod('AccountService', method)(
+        constructor.prototype[method],
+        method,
+        descriptor,
+      );
     }
   };
 }
 
-export const ACCOUNT_SERVICE_NAME = "AccountService";
+export const ACCOUNT_SERVICE_NAME = 'AccountService';

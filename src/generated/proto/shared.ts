@@ -2,11 +2,11 @@
 // versions:
 //   protoc-gen-ts_proto  v2.2.0
 //   protoc               v3.12.4
-// source: error.proto
+// source: shared.proto
 
 /* eslint-disable */
 
-export const protobufPackage = "shared";
+export const protobufPackage = 'shared';
 
 export enum ServiceErrorCode {
   UNKNOWN = 0,
@@ -18,9 +18,16 @@ export enum ServiceErrorCode {
   UNRECOGNIZED = -1,
 }
 
+export enum Currency {
+  MDL = 0,
+  USD = 1,
+  EUR = 2,
+  UNRECOGNIZED = -1,
+}
+
 export interface ServiceError {
   code: ServiceErrorCode;
   message: string;
 }
 
-export const SHARED_PACKAGE_NAME = "shared";
+export const SHARED_PACKAGE_NAME = 'shared';
