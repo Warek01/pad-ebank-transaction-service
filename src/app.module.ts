@@ -5,11 +5,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import path from 'path';
 
-import { ACCOUNT_SERVICE_PACKAGE_NAME } from '@ebank-transaction/generated/proto/account_service';
-import { HealthModule } from '@ebank-transaction/health/health-module';
-import { TransactionModule } from '@ebank-transaction/transaction/transaction.module';
-import { AppController } from '@ebank-transaction/app.controller';
-import { AppEnv } from '@ebank-transaction/types/app-env';
+import { ACCOUNT_SERVICE_PACKAGE_NAME } from '@/generated/proto/account_service';
+import { HealthModule } from '@/health/health-module';
+import { TransactionModule } from '@/transaction/transaction.module';
+import { AppController } from '@/app.controller';
+import { AppEnv } from '@/types/app-env';
 
 @Module({
   imports: [

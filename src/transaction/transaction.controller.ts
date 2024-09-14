@@ -20,20 +20,20 @@ import {
   TransferResult,
   WithdrawData,
   WithdrawResult,
-} from '@ebank-transaction/generated/proto/transacton_service';
+} from '@/generated/proto/transacton_service';
 import {
   ACCOUNT_SERVICE_NAME,
   ACCOUNT_SERVICE_PACKAGE_NAME,
   AccountServiceClient,
-} from '@ebank-transaction/generated/proto/account_service';
-import { Transaction } from '@ebank-transaction/entities/transaction.entity';
-import { TransactionType } from '@ebank-transaction/transaction/transaction.enums';
+} from '@/generated/proto/account_service';
+import { Transaction } from '@/entities/transaction.entity';
+import { TransactionType } from '@/transaction/transaction.enums';
 import {
   Currency as ProtoCurrency,
   ServiceError,
   ServiceErrorCode,
-} from '@ebank-transaction/generated/proto/shared';
-import { Currency } from '@ebank-transaction/enums/currency';
+} from '@/generated/proto/shared';
+import { Currency } from '@/enums/currency';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()

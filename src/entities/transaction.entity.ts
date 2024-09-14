@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-import { TransactionType } from '@ebank-transaction/transaction/transaction.enums';
-import { Currency } from '@ebank-transaction/enums/currency';
+import { TransactionType } from '@/transaction/transaction.enums';
+import { Currency } from '@/enums/currency';
 
 @Entity('transactions')
 export class Transaction {

@@ -8,10 +8,10 @@ import { ConfigService } from '@nestjs/config';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@ebank-transaction/generated/proto/transacton_service';
-import { AppEnv } from '@ebank-transaction/types/app-env';
-import { AppModule } from '@ebank-transaction/app.module';
-import { LoggingInterceptor } from '@ebank-transaction/interceptors/logging.interceptor';
+import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transacton_service';
+import { AppEnv } from '@/types/app-env';
+import { AppModule } from '@/app.module';
+import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger(bootstrap.name, { timestamp: true });
@@ -37,7 +37,7 @@ async function bootstrap() {
   const protosPath: string = path.join(__dirname, 'proto');
   const protoFiles: string[] = await fs.readdir(protosPath);
 
-  const transactionMicroserviceGrpcOptions: GrpcOptions = {
+  const transactionGrpcOptions: GrpcOptions = {
     options: {
       protoPath: protoFiles,
       loader: {
@@ -51,7 +51,7 @@ async function bootstrap() {
     transport: Transport.GRPC,
   };
 
-  app.connectMicroservice(transactionMicroserviceGrpcOptions);
+  app.connectMicroservice(transactionGrpcOptions);
   app.useGlobalInterceptors(new LoggingInterceptor());
 
   await Promise.all([

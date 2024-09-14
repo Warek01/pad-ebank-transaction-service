@@ -20,7 +20,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@ebank-transaction/*": ["./src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }
