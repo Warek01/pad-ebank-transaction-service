@@ -8,6 +8,7 @@ export interface AppEnv {
   DB_HOST: string;
 
   HTTP_PORT: string;
+  HTTP_HOST: string;
 
   TRANSACTION_SERVICE_GRPC_HOST: string;
   TRANSACTION_SERVICE_GRPC_PORT: string;
