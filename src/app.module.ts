@@ -10,6 +10,7 @@ import { HealthModule } from '@/health/health-module';
 import { TransactionModule } from '@/transaction/transaction.module';
 import { AppController } from '@/app.controller';
 import { AppEnv } from '@/types/app-env';
+import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { AppEnv } from '@/types/app-env';
     }),
     HealthModule,
     TransactionModule,
+    ServiceDiscoveryModule,
   ],
   controllers: [AppController],
   providers: [],
