@@ -23,4 +23,9 @@ export interface AppEnv {
 
   SERVICE_DISCOVERY_HTTP_URL: string;
   SERVICE_DISCOVERY_HEALTHCHECK_INTERVAL: string;
+
+  MAX_CONCURRENT_TASKS: string;
+
+  GRPC_RATE_LIMIT_TTL: string;
+  GRPC_RATE_LIMIT_LIMIT: string;
 }

@@ -20,6 +20,9 @@ import { AppEnv } from '@/types/app-env';
 import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.module';
 import { TimeoutInterceptor } from '@/interceptors/timeout.interceptor';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
+import { ConcurrencyInterceptor } from '@/concurrency/concurrency.interceptor';
+import { ConcurrencyModule } from '@/concurrency/concurrency.module';
+import { ThrottlingModule } from '@/throttling/throttling.module';
 
 @Module({
   imports: [
@@ -82,6 +85,8 @@ import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
     HealthModule,
     TransactionModule,
     ServiceDiscoveryModule,
+    ConcurrencyModule,
+    ThrottlingModule,
   ],
   controllers: [AppController],
   providers: [
@@ -91,11 +96,15 @@ import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
     },
     {
       provide: APP_INTERCEPTOR,
-      useValue: new TimeoutInterceptor(seconds(10)),
+      useClass: LoggingInterceptor,
     },
     {
       provide: APP_INTERCEPTOR,
-      useClass: LoggingInterceptor,
+      useClass: ConcurrencyInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useValue: new TimeoutInterceptor(seconds(10)),
     },
   ],
   exports: [],

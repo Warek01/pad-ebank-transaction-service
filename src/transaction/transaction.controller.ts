@@ -1,4 +1,4 @@
-import { Controller, Inject } from '@nestjs/common';
+import { Controller, Inject, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Metadata } from '@grpc/grpc-js';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -33,10 +33,15 @@ import {
   ServiceError,
   ServiceErrorCode,
 } from '@/generated/proto/shared';
-import { Currency } from '@/enums/currency';
+import { Currency } from '@/enums/currency.enum';
+import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
+import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
+import { sleep } from '@/utils/sleep';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
+@UseGuards(ThrottlingGrpcGuard)
+@UseInterceptors(ConcurrencyGrpcInterceptor)
 export class TransactionController implements TransactionServiceController {
   private readonly accountService: AccountServiceClient;
 
@@ -160,6 +165,8 @@ export class TransactionController implements TransactionServiceController {
     request: GetHistoryOptions,
     metadata?: Metadata,
   ): Promise<TransactionsHistory> {
+    await sleep(60_000);
+
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
