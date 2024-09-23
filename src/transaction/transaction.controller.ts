@@ -36,7 +36,6 @@ import {
 import { Currency } from '@/enums/currency.enum';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
-import { sleep } from '@/utils/sleep';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
@@ -165,8 +164,6 @@ export class TransactionController implements TransactionServiceController {
     request: GetHistoryOptions,
     metadata?: Metadata,
   ): Promise<TransactionsHistory> {
-    await sleep(60_000);
-
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
