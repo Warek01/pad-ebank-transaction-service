@@ -3,6 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import {
+  minutes,
+  seconds,
+  ThrottlerGuard,
+  ThrottlerModule,
+} from '@nestjs/throttler';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import path from 'path';
 
 import { ACCOUNT_SERVICE_PACKAGE_NAME } from '@/generated/proto/account_service';
@@ -11,6 +18,8 @@ import { TransactionModule } from '@/transaction/transaction.module';
 import { AppController } from '@/app.controller';
 import { AppEnv } from '@/types/app-env';
 import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.module';
+import { TimeoutInterceptor } from '@/interceptors/timeout.interceptor';
+import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
 
 @Module({
   imports: [
@@ -55,12 +64,40 @@ import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.mo
         },
       ],
     }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (conf: ConfigService<AppEnv>) => [
+        {
+          name: 'default',
+          ttl: minutes(1),
+          limit: 100,
+        },
+        {
+          name: 'throttle-test',
+          ttl: seconds(1),
+          limit: 10,
+        },
+      ],
+    }),
     HealthModule,
     TransactionModule,
     ServiceDiscoveryModule,
   ],
   controllers: [AppController],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useValue: new TimeoutInterceptor(seconds(10)),
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+  ],
   exports: [],
 })
 export class AppModule {}

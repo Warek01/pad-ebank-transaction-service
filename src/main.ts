@@ -11,8 +11,6 @@ import path from 'path';
 import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transacton_service';
 import { AppEnv } from '@/types/app-env';
 import { AppModule } from '@/app.module';
-import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
-import { TimeoutInterceptor } from '@/interceptors/timeout.interceptor';
 
 async function bootstrap() {
   const logger = new Logger(bootstrap.name, { timestamp: true });
@@ -53,8 +51,6 @@ async function bootstrap() {
   };
 
   app.connectMicroservice(transactionGrpcOptions);
-  app.useGlobalInterceptors(new TimeoutInterceptor(3000));
-  app.useGlobalInterceptors(new LoggingInterceptor());
 
   await Promise.all([
     app.startAllMicroservices(),
