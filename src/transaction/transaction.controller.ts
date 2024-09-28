@@ -1,4 +1,4 @@
-import { Controller, Inject, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Metadata } from '@grpc/grpc-js';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -36,22 +36,29 @@ import {
 import { Currency } from '@/enums/currency.enum';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
+import { sleep } from '@/utils/sleep';
+import path from 'path';
+import { LoggingGrpcInterceptor } from '@/interceptors/logging.grpc.interceptor';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
 @UseGuards(ThrottlingGrpcGuard)
 @UseInterceptors(ConcurrencyGrpcInterceptor)
+@UseInterceptors(LoggingGrpcInterceptor)
 export class TransactionController implements TransactionServiceController {
   private readonly accountService: AccountServiceClient;
+  private readonly accountGrpcClientProxy: ClientGrpcProxy;
 
   constructor(
-    @Inject(ACCOUNT_SERVICE_PACKAGE_NAME)
-    accountGrpcClientProxy: ClientGrpcProxy,
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
   ) {
+    this.accountGrpcClientProxy = this.createClientProxy(
+      'account-service:3100',
+    );
+
     this.accountService =
-      accountGrpcClientProxy.getService<AccountServiceClient>(
+      this.accountGrpcClientProxy.getService<AccountServiceClient>(
         ACCOUNT_SERVICE_NAME,
       );
   }
@@ -164,6 +171,8 @@ export class TransactionController implements TransactionServiceController {
     request: GetHistoryOptions,
     metadata?: Metadata,
   ): Promise<TransactionsHistory> {
+    await sleep(60_000);
+
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
@@ -264,6 +273,17 @@ export class TransactionController implements TransactionServiceController {
     await this.transactionRepo.save(transaction);
 
     return {};
+  }
+
+  private createClientProxy(url: string): ClientGrpcProxy {
+    return new ClientGrpcProxy({
+      url,
+      package: ACCOUNT_SERVICE_PACKAGE_NAME,
+      protoPath: path.join(__dirname, '../proto/account_service.proto'),
+      loader: {
+        includeDirs: [path.join(__dirname, '../proto')],
+      },
+    });
   }
 
   private protoCurrencyToCurrency(currency: ProtoCurrency): Currency {

@@ -27,27 +27,31 @@ export class ServiceDiscoveryService implements OnModuleInit {
 
   async registerService(retryAttempts = 5): Promise<void> {
     const hostname = this.config.get('HOSTNAME');
-    const port = parseInt(this.config.get('HTTP_PORT'));
-    const scheme = this.config.get('HTTP_SCHEME');
-    const url = `${scheme}://${hostname}:${port}`;
+    const grpcPort = parseInt(this.config.get('TRANSACTION_SERVICE_GRPC_PORT'));
+    const serviceUrl = `${hostname}:${grpcPort}`;
+
+    const httpPort = parseInt(this.config.get('HTTP_PORT'));
+    const httpScheme = this.config.get('HTTP_SCHEME');
+    const healthcheckUrl = `${httpScheme}://${hostname}:${httpPort}/health`;
+
+    const data: ServiceDiscoveryRequest = {
+      serviceName: TRANSACTION_SERVICE_NAME,
+      serviceId: uuid(),
+      url: serviceUrl,
+      healthcheck: {
+        url: healthcheckUrl,
+        checkInterval: this.healthcheckInterval,
+      },
+    };
+
+    const requestUrl =
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL') + '/api/service/register';
 
     try {
       await firstValueFrom(
-        this.http.post(
-          this.config.get('SERVICE_DISCOVERY_HTTP_URL') + '/services/register',
-          {
-            serviceName: TRANSACTION_SERVICE_NAME,
-            serviceId: uuid(),
-            url: url,
-            healthcheck: {
-              url: url + '/health',
-              checkInterval: this.healthcheckInterval,
-            },
-          } as ServiceDiscoveryRequest,
-          {
-            timeout: 5000,
-          },
-        ),
+        this.http.post(requestUrl, data, {
+          timeout: 5000,
+        }),
       );
 
       this.logger.log('Service registered');

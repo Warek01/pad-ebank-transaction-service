@@ -1,9 +1,28 @@
-FROM node:22-alpine
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+RUN apk update
+RUN apk upgrade --no-cache
+RUN npm upgrade -g
+RUN npm i -g -f pnpm
+
+COPY package.json .
+COPY pnpm-lock.yaml .
+
+RUN pnpm i --frozen-lockfile
+
+COPY . .
+
+RUN pnpm build
+
+FROM node:22-alpine AS production
+
 WORKDIR /app
 
 RUN apk update
 RUN apk upgrade --no-cache
 RUN apk add curl
+RUN npm upgrade -g
 RUN npm i -g -f pnpm
 
 COPY package.json .
@@ -11,10 +30,10 @@ COPY pnpm-lock.yaml .
 
 RUN pnpm i --frozen-lockfile --prod
 
-COPY . .
-
-RUN pnpm build
+COPY --from=builder /app/dist/ dist/
 
 ENV NODE_ENV=production
 
-ENTRYPOINT pnpm start:prod
+EXPOSE 3000
+
+ENTRYPOINT node dist/main.js

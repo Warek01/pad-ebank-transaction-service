@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 import {
   minutes,
   seconds,
@@ -10,9 +9,7 @@ import {
   ThrottlerModule,
 } from '@nestjs/throttler';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import path from 'path';
 
-import { ACCOUNT_SERVICE_PACKAGE_NAME } from '@/generated/proto/account_service';
 import { HealthModule } from '@/health/health-module';
 import { TransactionModule } from '@/transaction/transaction.module';
 import { AppController } from '@/app.controller';
@@ -34,7 +31,7 @@ import { ThrottlingModule } from '@/throttling/throttling.module';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (conf: ConfigService<AppEnv>) => ({
+      useFactory: (conf: ConfigService<AppEnv>): TypeOrmModuleOptions => ({
         type: 'postgres',
         host: conf.get('DB_HOST'),
         port: conf.get('DB_PORT'),
@@ -45,27 +42,6 @@ import { ThrottlingModule } from '@/throttling/throttling.module';
         synchronize: true,
         namingStrategy: new SnakeNamingStrategy(),
       }),
-    }),
-    ClientsModule.registerAsync({
-      isGlobal: true,
-      clients: [
-        {
-          name: ACCOUNT_SERVICE_PACKAGE_NAME,
-          inject: [ConfigService],
-          useFactory: (conf: ConfigService<AppEnv>) => ({
-            name: ACCOUNT_SERVICE_PACKAGE_NAME,
-            options: {
-              package: ACCOUNT_SERVICE_PACKAGE_NAME,
-              protoPath: path.join(__dirname, 'proto', 'account_service.proto'),
-              loader: {
-                includeDirs: [path.join(__dirname, 'proto')],
-              },
-              url: conf.get('ACCOUNT_SERVICE_GRPC_URL'),
-            },
-            transport: Transport.GRPC,
-          }),
-        },
-      ],
     }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
