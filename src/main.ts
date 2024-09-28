@@ -40,6 +40,7 @@ async function bootstrap() {
     options: {
       protoPath: protoFiles,
       loader: {
+        defaults: true,
         includeDirs: [protosPath],
       },
       package: TRANSACTION_SERVICE_PACKAGE_NAME,
