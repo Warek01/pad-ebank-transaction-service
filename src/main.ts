@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transacton_service';
+import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transaction_service';
 import { AppEnv } from '@/types/app-env';
 import { AppModule } from '@/app.module';
 

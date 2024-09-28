@@ -7,3 +7,12 @@ export interface ServiceDiscoveryRequest {
     checkInterval: number;
   };
 }
+
+export interface ServiceInstance {
+  id: string;
+  url: string;
+}
+
+export interface ServiceInstancesResponse {
+  instances: Array<ServiceInstance>;
+}

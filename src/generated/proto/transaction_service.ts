@@ -2,7 +2,7 @@
 // versions:
 //   protoc-gen-ts_proto  v2.2.0
 //   protoc               v3.12.4
-// source: transacton_service.proto
+// source: transaction_service.proto
 
 /* eslint-disable */
 import { Metadata } from '@grpc/grpc-js';
@@ -16,7 +16,6 @@ export enum TransactionType {
   DEPOSIT = 0,
   WITHDRAW = 1,
   TRANSFER = 2,
-  UNRECOGNIZED = -1,
 }
 
 export interface TransferData {

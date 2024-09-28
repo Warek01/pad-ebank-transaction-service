@@ -1,17 +1,19 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuid } from 'uuid';
 
 import { AppEnv } from '@/types/app-env';
-import { TRANSACTION_SERVICE_NAME } from '@/generated/proto/transacton_service';
-
-import { ServiceDiscoveryRequest } from './service-discovery.types';
+import { TRANSACTION_SERVICE_NAME } from '@/generated/proto/transaction_service';
+import {
+  ServiceDiscoveryRequest,
+  ServiceInstance,
+  ServiceInstancesResponse,
+} from '@/service-discovery/service-discovery.types';
 
 @Injectable()
-export class ServiceDiscoveryService implements OnModuleInit {
-  healthcheckInterval: number = 60;
+export class ServiceDiscoveryService {
   private readonly logger = new Logger(ServiceDiscoveryService.name);
 
   constructor(
@@ -19,13 +21,19 @@ export class ServiceDiscoveryService implements OnModuleInit {
     private readonly config: ConfigService<AppEnv>,
   ) {}
 
-  onModuleInit() {
-    this.healthcheckInterval = parseInt(
-      this.config.get('SERVICE_DISCOVERY_HEALTHCHECK_INTERVAL'),
+  async getInstances(serviceName: string): Promise<ServiceInstance[]> {
+    const url =
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL') +
+      `/api/service/${serviceName}`;
+
+    const res = await firstValueFrom(
+      this.http.get<ServiceInstancesResponse>(url),
     );
+
+    return res.data.instances;
   }
 
-  async registerService(retryAttempts = 5): Promise<void> {
+  async registerService(retryAttempts = 10): Promise<void> {
     const hostname = this.config.get('HOSTNAME');
     const grpcPort = parseInt(this.config.get('TRANSACTION_SERVICE_GRPC_PORT'));
     const serviceUrl = `${hostname}:${grpcPort}`;
@@ -34,13 +42,17 @@ export class ServiceDiscoveryService implements OnModuleInit {
     const httpScheme = this.config.get('HTTP_SCHEME');
     const healthcheckUrl = `${httpScheme}://${hostname}:${httpPort}/health`;
 
+    const healthcheckInterval = parseInt(
+      this.config.get('SERVICE_DISCOVERY_HEALTHCHECK_INTERVAL'),
+    );
+
     const data: ServiceDiscoveryRequest = {
       serviceName: TRANSACTION_SERVICE_NAME,
       serviceId: uuid(),
       url: serviceUrl,
       healthcheck: {
         url: healthcheckUrl,
-        checkInterval: this.healthcheckInterval,
+        checkInterval: healthcheckInterval,
       },
     };
 
@@ -60,6 +72,8 @@ export class ServiceDiscoveryService implements OnModuleInit {
 
       if (retryAttempts <= 0) {
         this.logger.error('Error registering service');
+        this.logger.log('Shutting down the application...');
+        process.kill(process.pid, 'SIGINT');
         return;
       }
 

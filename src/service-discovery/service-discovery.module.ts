@@ -5,7 +5,7 @@ import { ServiceDiscoveryService } from './service-discovery.service';
 
 @Module({
   imports: [HttpModule],
-  exports: [],
+  exports: [ServiceDiscoveryService],
   providers: [ServiceDiscoveryService],
   controllers: [],
 })

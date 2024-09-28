@@ -1,8 +1,8 @@
 {
   "name": "pad-ebank-transaction-service",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Transaction service of eBank",
+  "author": "warek",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -17,7 +17,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "generate:grpc": "bash ./generate-protobuf.sh"
+    "generate:grpc": "bash generate-protobuf.sh"
   },
   "dependencies": {
     "@grpc/grpc-js": "^1.11.3",

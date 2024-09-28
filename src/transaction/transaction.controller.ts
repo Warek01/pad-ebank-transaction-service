@@ -4,6 +4,7 @@ import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import path from 'path';
 
 import {
   CancelTransactionOptions,
@@ -15,30 +16,25 @@ import {
   TransactionServiceController,
   TransactionServiceControllerMethods,
   TransactionsHistory,
-  TransactionType as ProtoTransactionType,
+  TransactionType,
   TransferData,
   TransferResult,
   WithdrawData,
   WithdrawResult,
-} from '@/generated/proto/transacton_service';
+} from '@/generated/proto/transaction_service';
 import {
   ACCOUNT_SERVICE_NAME,
   ACCOUNT_SERVICE_PACKAGE_NAME,
   AccountServiceClient,
 } from '@/generated/proto/account_service';
 import { Transaction } from '@/entities/transaction.entity';
-import { TransactionType } from '@/transaction/transaction.enums';
-import {
-  Currency as ProtoCurrency,
-  ServiceError,
-  ServiceErrorCode,
-} from '@/generated/proto/shared';
-import { Currency } from '@/enums/currency.enum';
+import { ServiceError, ServiceErrorCode } from '@/generated/proto/shared';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
 import { sleep } from '@/utils/sleep';
-import path from 'path';
 import { LoggingGrpcInterceptor } from '@/interceptors/logging.grpc.interceptor';
+import { ServiceDiscoveryService } from '@/service-discovery/service-discovery.service';
+import { ServiceInstance } from '@/service-discovery/service-discovery.types';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
@@ -46,27 +42,23 @@ import { LoggingGrpcInterceptor } from '@/interceptors/logging.grpc.interceptor'
 @UseInterceptors(ConcurrencyGrpcInterceptor)
 @UseInterceptors(LoggingGrpcInterceptor)
 export class TransactionController implements TransactionServiceController {
-  private readonly accountService: AccountServiceClient;
-  private readonly accountGrpcClientProxy: ClientGrpcProxy;
+  private accountGrpcClientProxy: ClientGrpcProxy;
+  private fetchedInstancesAt = 0;
+  private accountServiceUrlIndex = 0;
+  private accountServiceInstances: ServiceInstance[] = [];
 
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
-  ) {
-    this.accountGrpcClientProxy = this.createClientProxy(
-      'account-service:3100',
-    );
-
-    this.accountService =
-      this.accountGrpcClientProxy.getService<AccountServiceClient>(
-        ACCOUNT_SERVICE_NAME,
-      );
-  }
+    private readonly serviceDiscoveryService: ServiceDiscoveryService,
+  ) {}
 
   async cancelTransaction(
     request: CancelTransactionOptions,
     metadata?: Metadata,
   ): Promise<CancelTransactionResult> {
+    const accountService = await this.getAccountService();
+
     const transaction = await this.transactionRepo.findOneBy({
       id: request.transactionId,
     });
@@ -83,10 +75,10 @@ export class TransactionController implements TransactionServiceController {
     let error: ServiceError | undefined;
 
     switch (transaction.type) {
-      case TransactionType.Deposit: {
+      case TransactionType.DEPOSIT: {
         const result = await firstValueFrom(
-          this.accountService.addCurrency({
-            currency: this.currencyToProtoCurrency(transaction.currency),
+          accountService.addCurrency({
+            currency: transaction.currency,
             amount: -transaction.amount,
             cardCode: transaction.dstCardCode,
           }),
@@ -94,10 +86,10 @@ export class TransactionController implements TransactionServiceController {
         error = result.error;
         break;
       }
-      case TransactionType.Withdraw: {
+      case TransactionType.WITHDRAW: {
         const result = await firstValueFrom(
-          this.accountService.addCurrency({
-            currency: this.currencyToProtoCurrency(transaction.currency),
+          accountService.addCurrency({
+            currency: transaction.currency,
             amount: transaction.amount,
             cardCode: transaction.dstCardCode,
           }),
@@ -105,10 +97,10 @@ export class TransactionController implements TransactionServiceController {
         error = result.error;
         break;
       }
-      case TransactionType.Transfer: {
+      case TransactionType.TRANSFER: {
         const result1 = await firstValueFrom(
-          this.accountService.addCurrency({
-            currency: this.currencyToProtoCurrency(transaction.currency),
+          accountService.addCurrency({
+            currency: transaction.currency,
             amount: -transaction.amount,
             cardCode: transaction.srcCardCode,
           }),
@@ -121,8 +113,8 @@ export class TransactionController implements TransactionServiceController {
         }
 
         const result2 = await firstValueFrom(
-          this.accountService.addCurrency({
-            currency: this.currencyToProtoCurrency(transaction.currency),
+          accountService.addCurrency({
+            currency: transaction.currency,
             amount: transaction.amount,
             cardCode: transaction.dstCardCode,
           }),
@@ -141,8 +133,10 @@ export class TransactionController implements TransactionServiceController {
     request: DepositData,
     metadata?: Metadata,
   ): Promise<DepositResult> {
+    const accountService = await this.getAccountService();
+
     const addCurrencyResult = await firstValueFrom(
-      this.accountService.addCurrency({
+      accountService.addCurrency({
         currency: request.currency,
         amount: request.amount,
         cardCode: request.cardCode,
@@ -157,8 +151,8 @@ export class TransactionController implements TransactionServiceController {
 
     const transaction = new Transaction();
     transaction.dstCardCode = request.cardCode;
-    transaction.type = TransactionType.Deposit;
-    transaction.currency = this.protoCurrencyToCurrency(request.currency);
+    transaction.type = TransactionType.DEPOSIT;
+    transaction.currency = request.currency;
     transaction.amount = request.amount;
     transaction.timestamp = new Date();
 
@@ -189,7 +183,7 @@ export class TransactionController implements TransactionServiceController {
     return {
       transactions: result.map(
         (t): ProtoTransaction => ({
-          type: this.transactionTypeToProtoTransactionType(t.type),
+          type: t.type,
           amount: t.amount,
           dstCardCode: t.dstCardCode,
           srcCardCode: t.srcCardCode,
@@ -204,8 +198,10 @@ export class TransactionController implements TransactionServiceController {
     request: TransferData,
     metadata?: Metadata,
   ): Promise<TransferResult> {
+    const accountService = await this.getAccountService();
+
     const addCurrencyResult1 = await firstValueFrom(
-      this.accountService.addCurrency({
+      accountService.addCurrency({
         currency: request.currency,
         amount: -request.amount,
         cardCode: request.srcCardCode,
@@ -219,7 +215,7 @@ export class TransactionController implements TransactionServiceController {
     }
 
     const addCurrencyResult2 = await firstValueFrom(
-      this.accountService.addCurrency({
+      accountService.addCurrency({
         currency: request.currency,
         amount: request.amount,
         cardCode: request.srcCardCode,
@@ -235,8 +231,8 @@ export class TransactionController implements TransactionServiceController {
     const transaction = new Transaction();
     transaction.srcCardCode = request.srcCardCode;
     transaction.dstCardCode = request.dstCardCode;
-    transaction.type = TransactionType.Transfer;
-    transaction.currency = this.protoCurrencyToCurrency(request.currency);
+    transaction.type = TransactionType.TRANSFER;
+    transaction.currency = request.currency;
     transaction.amount = request.amount;
     transaction.timestamp = new Date();
 
@@ -249,8 +245,10 @@ export class TransactionController implements TransactionServiceController {
     request: WithdrawData,
     metadata?: Metadata,
   ): Promise<WithdrawResult> {
+    const accountService = await this.getAccountService();
+
     const addCurrencyResult = await firstValueFrom(
-      this.accountService.addCurrency({
+      accountService.addCurrency({
         currency: request.currency,
         amount: -request.amount,
         cardCode: request.cardCode,
@@ -265,8 +263,8 @@ export class TransactionController implements TransactionServiceController {
 
     const transaction = new Transaction();
     transaction.dstCardCode = request.cardCode;
-    transaction.type = TransactionType.Withdraw;
-    transaction.currency = this.protoCurrencyToCurrency(request.currency);
+    transaction.type = TransactionType.WITHDRAW;
+    transaction.currency = request.currency;
     transaction.amount = request.amount;
     transaction.timestamp = new Date();
 
@@ -275,64 +273,33 @@ export class TransactionController implements TransactionServiceController {
     return {};
   }
 
-  private createClientProxy(url: string): ClientGrpcProxy {
-    return new ClientGrpcProxy({
-      url,
+  private async getAccountService(): Promise<AccountServiceClient> {
+    this.accountGrpcClientProxy?.close();
+    const now = Date.now();
+
+    if (now - this.fetchedInstancesAt > 30 * 1000) {
+      this.accountServiceInstances =
+        await this.serviceDiscoveryService.getInstances(ACCOUNT_SERVICE_NAME);
+
+      this.fetchedInstancesAt = now;
+    }
+
+    this.accountGrpcClientProxy = new ClientGrpcProxy({
+      url: this.accountServiceInstances[this.accountServiceUrlIndex].url,
       package: ACCOUNT_SERVICE_PACKAGE_NAME,
-      protoPath: path.join(__dirname, '../proto/account_service.proto'),
+      protoPath: path.join(__dirname, '../../proto/account_service.proto'),
       loader: {
-        includeDirs: [path.join(__dirname, '../proto')],
+        defaults: true,
+        includeDirs: [path.join(__dirname, '../../proto')],
       },
     });
-  }
 
-  private protoCurrencyToCurrency(currency: ProtoCurrency): Currency {
-    switch (currency) {
-      case ProtoCurrency.EUR:
-        return Currency.Eur;
-      case ProtoCurrency.MDL:
-        return Currency.Mdl;
-      case ProtoCurrency.USD:
-        return Currency.Usd;
-      default:
-        throw new Error('unknown currency');
-    }
-  }
+    this.accountServiceUrlIndex++;
 
-  private currencyToProtoCurrency(currency: Currency): ProtoCurrency {
-    switch (currency) {
-      case Currency.Eur:
-        return ProtoCurrency.EUR;
-      case Currency.Mdl:
-        return ProtoCurrency.MDL;
-      case Currency.Usd:
-        return ProtoCurrency.USD;
+    if (this.accountServiceUrlIndex == this.accountServiceInstances.length) {
+      this.accountServiceUrlIndex = 0;
     }
-  }
 
-  private transactionTypeToProtoTransactionType(
-    type: TransactionType,
-  ): ProtoTransactionType {
-    switch (type) {
-      case TransactionType.Deposit:
-        return ProtoTransactionType.DEPOSIT;
-      case TransactionType.Withdraw:
-        return ProtoTransactionType.WITHDRAW;
-      case TransactionType.Transfer:
-        return ProtoTransactionType.TRANSFER;
-    }
-  }
-
-  private protoTransactionTypeToTransactionType(
-    type: ProtoTransactionType,
-  ): TransactionType {
-    switch (type) {
-      case ProtoTransactionType.DEPOSIT:
-        return TransactionType.Deposit;
-      case ProtoTransactionType.WITHDRAW:
-        return TransactionType.Withdraw;
-      case ProtoTransactionType.TRANSFER:
-        return TransactionType.Transfer;
-    }
+    return this.accountGrpcClientProxy.getService(ACCOUNT_SERVICE_NAME);
   }
 }

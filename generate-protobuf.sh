@@ -7,16 +7,18 @@ rm -rf $OUTPUT
 mkdir -p $OUTPUT
 
 TS_ARGS=(
-  'lowerCaseServiceMethods=true'
-  'outputEncodeMethods=false'
-  'outputJsonMethods=false'
-  'outputClientImpl=true'
-  'snakeToCamel=true'
-  'nestJs=true'
-  'useNullAsOptional=true'
-  'addNestjsRestParameter=false'
-  'addGrpcMetadata=true'
-  'useOptionals=messages'
+  lowerCaseServiceMethods=true
+  outputEncodeMethods=false
+  outputJsonMethods=false
+  outputClientImpl=true
+  snakeToCamel=true
+  nestJs=true
+  useNullAsOptional=true
+  addNestjsRestParameter=false
+  addGrpcMetadata=true
+  useOptionals=messages
+  unrecognizedEnum=false
+  removeEnumPrefix=true
 )
 
 protoc \

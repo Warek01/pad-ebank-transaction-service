@@ -15,14 +15,12 @@ export enum ServiceErrorCode {
   NOT_FOUND = 404,
   CONFLICT = 409,
   INTERNAL = 500,
-  UNRECOGNIZED = -1,
 }
 
 export enum Currency {
   MDL = 0,
   USD = 1,
   EUR = 2,
-  UNRECOGNIZED = -1,
 }
 
 export interface ServiceError {
