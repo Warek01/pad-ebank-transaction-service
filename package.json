@@ -12,11 +12,6 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
-    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
     "generate:grpc": "bash generate-protobuf.sh"
   },
   "dependencies": {
@@ -51,43 +46,20 @@
   },
   "devDependencies": {
     "@nestjs/schematics": "^10.1.4",
-    "@nestjs/testing": "^10.4.4",
     "@types/express": "^5.0.0",
     "@types/google-protobuf": "^3.15.12",
-    "@types/jest": "^29.5.13",
     "@types/node": "^22.7.4",
-    "@types/supertest": "^6.0.2",
     "@types/uuid": "^10.0.0",
     "grpc-tools": "^1.12.4",
-    "jest": "^29.7.0",
     "nestjs-proto-gen-ts": "^1.0.21",
     "prettier": "^3.3.3",
     "protoc-gen-grpc": "^2.0.4",
     "source-map-support": "^0.5.21",
-    "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.1",
     "ts-node": "^10.9.2",
     "ts-proto": "^2.2.0",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.6.2"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
   },
   "engines": {
     "node": "^22.5.1"
