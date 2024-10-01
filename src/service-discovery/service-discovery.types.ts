@@ -1,18 +1,12 @@
 export interface ServiceDiscoveryRequest {
-  serviceName: string;
-  serviceId: string;
+  name: string;
+  id: string;
   url: string;
-  healthcheck: {
-    url: string;
-    checkInterval: number;
-  };
+  healthCheckUrl: string;
+  healthCheckInterval: number;
 }
 
 export interface ServiceInstance {
   id: string;
   url: string;
-}
-
-export interface ServiceInstancesResponse {
-  instances: Array<ServiceInstance>;
 }

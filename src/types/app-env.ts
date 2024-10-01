@@ -13,10 +13,6 @@ export interface AppEnv {
   HTTP_HOST: string;
   HTTP_SCHEME: string;
 
-  TRANSACTION_SERVICE_GRPC_HOST: string;
-  TRANSACTION_SERVICE_GRPC_PORT: string;
-  TRANSACTION_SERVICE_GRPC_URL: string;
-
   ACCOUNT_SERVICE_GRPC_PORT: string;
   ACCOUNT_SERVICE_GRPC_URL: string;
   ACCOUNT_SERVICE_GRPC_HOST: string;
@@ -28,6 +24,8 @@ export interface AppEnv {
 
   MAX_CONCURRENT_TASKS: string;
 
+  GRPC_HOST: string;
+  GRPC_PORT: string;
   GRPC_RATE_LIMIT_TTL: string;
   GRPC_RATE_LIMIT_LIMIT: string;
 }

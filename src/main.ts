@@ -25,6 +25,8 @@ async function bootstrap() {
   const config = app.get(ConfigService<AppEnv>);
   const httpPort = parseInt(config.get('HTTP_PORT'));
   const httpHost = config.get('HTTP_HOST');
+  const grpcHost = config.get('GRPC_HOST');
+  const grpcPort = config.get('GRPC_PORT');
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('eBank transaction service')
@@ -44,7 +46,7 @@ async function bootstrap() {
         includeDirs: [protosPath],
       },
       package: TRANSACTION_SERVICE_PACKAGE_NAME,
-      url: config.get('TRANSACTION_SERVICE_GRPC_URL'),
+      url: `${grpcHost}:${grpcPort}`,
       onLoadPackageDefinition: (pkg, server) =>
         new ReflectionService(pkg).addToServer(server),
     },

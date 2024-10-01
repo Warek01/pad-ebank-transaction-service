@@ -24,10 +24,12 @@ import { ThrottlingModule } from '@/throttling/throttling.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      cache: false,
+      cache: true,
       isGlobal: true,
       envFilePath: ['.env', '.env.development', '.env.production'],
       expandVariables: true,
+      ignoreEnvVars: false,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
