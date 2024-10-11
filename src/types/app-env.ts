@@ -22,10 +22,17 @@ export interface AppEnv {
   SERVICE_DISCOVERY_RETRY_INTERVAL: string;
   SERVICE_DISCOVERY_REQUEST_TIMEOUT: string;
 
+  REDIS_HOST: string;
+  REDIS_PORT: string;
+  REDIS_DB: string;
+  REDIS_USER: string;
+  REDIS_PASSWORD: string;
+
   MAX_CONCURRENT_TASKS: string;
 
   GRPC_HOST: string;
   GRPC_PORT: string;
+  GRPC_SCHEME: string;
   GRPC_RATE_LIMIT_TTL: string;
   GRPC_RATE_LIMIT_LIMIT: string;
 }

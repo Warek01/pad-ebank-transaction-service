@@ -6,6 +6,7 @@ import { TransactionController } from '@/transaction/transaction.controller';
 import { ThrottlingModule } from '@/throttling/throttling.module';
 import { ConcurrencyModule } from '@/concurrency/concurrency.module';
 import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.module';
+import { CacheModule } from '@/cache/cache.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { ServiceDiscoveryModule } from '@/service-discovery/service-discovery.mo
     ThrottlingModule,
     ConcurrencyModule,
     ServiceDiscoveryModule,
+    CacheModule,
   ],
   controllers: [TransactionController],
   exports: [],

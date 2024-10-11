@@ -18,4 +18,4 @@ EXPOSE 3100
 EXPOSE 3200
 
 ENV NODE_ENV=development
-ENTRYPOINT pnpm start:dev
+ENTRYPOINT ["pnpm", "start:dev"]

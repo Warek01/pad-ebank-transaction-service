@@ -1,16 +1,16 @@
 import { ReflectionService } from '@grpc/reflection';
 import { NestFactory } from '@nestjs/core';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
-import { INestApplication, Logger } from '@nestjs/common';
-import { Express } from 'express';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { INestApplication, Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Express } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 
-import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transaction_service';
-import { AppEnv } from '@/types/app-env';
 import { AppModule } from '@/app.module';
+import { AppEnv } from '@/types/app-env';
+import { TRANSACTION_SERVICE_PACKAGE_NAME } from '@/generated/proto/transaction_service';
 
 async function bootstrap() {
   const logger = new Logger(bootstrap.name, { timestamp: true });
@@ -23,10 +23,11 @@ async function bootstrap() {
     },
   });
   const config = app.get(ConfigService<AppEnv>);
-  const httpPort = parseInt(config.get('HTTP_PORT'));
+  const httpPort = config.get('HTTP_PORT');
   const httpHost = config.get('HTTP_HOST');
   const grpcHost = config.get('GRPC_HOST');
   const grpcPort = config.get('GRPC_PORT');
+  const hostname = config.get('HOSTNAME');
 
   const swaggerConfig = new DocumentBuilder()
     .setTitle('eBank transaction service')
@@ -61,6 +62,8 @@ async function bootstrap() {
       logger.log(`HTTP listening to ${httpHost}:${httpPort}`),
     ),
   ]);
+
+  logger.log(`========== Container hostname: ${hostname} ==========`);
 }
 
 bootstrap();

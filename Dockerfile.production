@@ -38,4 +38,4 @@ EXPOSE 3000
 EXPOSE 3100
 EXPOSE 3200
 
-ENTRYPOINT node dist/main.js
+ENTRYPOINT ["node", "dist/main.js"]

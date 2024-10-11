@@ -1,4 +1,4 @@
-import { Controller, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, Logger, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Metadata } from '@grpc/grpc-js';
 import { ClientGrpcProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -32,25 +32,28 @@ import { ServiceError, ServiceErrorCode } from '@/generated/proto/shared';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
 import { sleep } from '@/utils/sleep';
-import { LoggingGrpcInterceptor } from '@/interceptors/logging.grpc.interceptor';
 import { ServiceDiscoveryService } from '@/service-discovery/service-discovery.service';
 import { ServiceInstance } from '@/service-discovery/service-discovery.types';
+import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
+import { CacheService } from '@/cache/cache.service';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
 @UseGuards(ThrottlingGrpcGuard)
 @UseInterceptors(ConcurrencyGrpcInterceptor)
-@UseInterceptors(LoggingGrpcInterceptor)
+@UseInterceptors(LoggingInterceptor)
 export class TransactionController implements TransactionServiceController {
   private accountGrpcClientProxy: ClientGrpcProxy;
   private fetchedInstancesAt = 0;
   private accountServiceUrlIndex = 0;
   private accountServiceInstances: ServiceInstance[] = [];
+  private logger = new Logger(TransactionController.name);
 
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
     private readonly serviceDiscoveryService: ServiceDiscoveryService,
+    private readonly cache: CacheService,
   ) {}
 
   async cancelTransaction(
@@ -165,13 +168,19 @@ export class TransactionController implements TransactionServiceController {
     request: GetHistoryOptions,
     metadata?: Metadata,
   ): Promise<TransactionsHistory> {
-    await sleep(60_000);
+    const key = `transaction-history-${request.cardCode.replaceAll(' ', '_')}-${request.year}-${request.month}`;
+    const cache = await this.cache.client.get(key);
+
+    if (cache) {
+      this.logger.log(`Returned from cache ${key}`);
+      return JSON.parse(cache) as TransactionsHistory;
+    }
 
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
 
-    const result = await this.transactionRepo
+    const transactions = await this.transactionRepo
       .createQueryBuilder('t')
       .where('t.src_card_code = :code OR t.dst_card_code = :code', {
         code: request.cardCode,
@@ -180,8 +189,8 @@ export class TransactionController implements TransactionServiceController {
       .andWhere('t.timestamp < :dateMax', { dateMax: dateMax.toISOString() })
       .getMany();
 
-    return {
-      transactions: result.map(
+    const result = {
+      transactions: transactions.map(
         (t): ProtoTransaction => ({
           type: t.type,
           amount: t.amount,
@@ -192,6 +201,11 @@ export class TransactionController implements TransactionServiceController {
         }),
       ),
     };
+
+    await this.cache.client.set(key, JSON.stringify(result));
+    await this.cache.client.expire(key, 120);
+
+    return result;
   }
 
   async transferCurrency(
@@ -284,13 +298,15 @@ export class TransactionController implements TransactionServiceController {
       this.fetchedInstancesAt = now;
     }
 
+    const instance = this.accountServiceInstances[this.accountServiceUrlIndex];
+
     this.accountGrpcClientProxy = new ClientGrpcProxy({
-      url: this.accountServiceInstances[this.accountServiceUrlIndex].url,
+      url: `${instance.host}:${instance.port}`,
       package: ACCOUNT_SERVICE_PACKAGE_NAME,
-      protoPath: path.join(__dirname, '../../proto/account_service.proto'),
+      protoPath: path.join(__dirname, '../proto/account_service.proto'),
       loader: {
         defaults: true,
-        includeDirs: [path.join(__dirname, '../../proto')],
+        includeDirs: [path.join(__dirname, '../proto')],
       },
     });
 

@@ -1,12 +1,14 @@
 export interface ServiceDiscoveryRequest {
   name: string;
-  id: string;
-  url: string;
+  host: string;
+  port: string;
+  scheme: string;
   healthCheckUrl: string;
   healthCheckInterval: number;
 }
 
 export interface ServiceInstance {
-  id: string;
-  url: string;
+  scheme: string;
+  host: string;
+  port: string;
 }
