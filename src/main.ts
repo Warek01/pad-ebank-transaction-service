@@ -2,7 +2,7 @@ import { ReflectionService } from '@grpc/reflection';
 import { NestFactory } from '@nestjs/core';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
-import { INestApplication, Logger } from '@nestjs/common';
+import { INestApplication, Logger, ShutdownSignal } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Express } from 'express';
 import fs from 'fs/promises';
@@ -16,11 +16,6 @@ async function bootstrap() {
   const logger = new Logger(bootstrap.name, { timestamp: true });
   const app = await NestFactory.create<INestApplication<Express>>(AppModule, {
     logger,
-    cors: {
-      origin: '*',
-      allowedHeaders: '*',
-      methods: '*',
-    },
   });
   const config = app.get(ConfigService<AppEnv>);
   const httpPort = config.get('HTTP_PORT');
@@ -55,6 +50,12 @@ async function bootstrap() {
   };
 
   app.connectMicroservice(transactionGrpcOptions);
+  app.enableCors({
+    origin: '*',
+    allowedHeaders: '*',
+    methods: '*',
+  });
+  app.enableShutdownHooks([ShutdownSignal.SIGTERM, ShutdownSignal.SIGINT]);
 
   await Promise.all([
     app.startAllMicroservices(),
