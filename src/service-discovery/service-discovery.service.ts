@@ -37,6 +37,16 @@ export class ServiceDiscoveryService {
     return res.data;
   }
 
+  async getInstance(serviceName: string): Promise<ServiceInstance> {
+    const url =
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL') +
+      `/api/v1/load-balancing/${serviceName}`;
+
+    const res = await firstValueFrom(this.http.get<ServiceInstance>(url));
+
+    return res.data;
+  }
+
   async registerService(retryAttempts = 5): Promise<boolean> {
     const grpcPort = this.config.get('GRPC_PORT');
     const grpcScheme = this.config.get('GRPC_SCHEME');
@@ -44,12 +54,14 @@ export class ServiceDiscoveryService {
     const httpPort = parseInt(this.config.get('HTTP_PORT'));
     const httpScheme = this.config.get('HTTP_SCHEME');
     const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/api/v1/health`;
+    const healthPingUrl = `${httpScheme}://${this.hostname}:${httpPort}/api/v1/health/ping`;
 
     const data: ServiceDiscoveryRequest = {
       name: TRANSACTION_SERVICE_NAME,
       host: this.hostname,
       port: grpcPort,
       scheme: grpcScheme,
+      healthPingUrl: healthPingUrl,
       healthCheckUrl: healthCheckUrl,
       healthCheckInterval: this.healthcheckInterval,
     };

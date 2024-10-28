@@ -3,6 +3,7 @@ export interface ServiceDiscoveryRequest {
   host: string;
   port: string;
   scheme: string;
+  healthPingUrl: string;
   healthCheckUrl: string;
   healthCheckInterval: number;
 }

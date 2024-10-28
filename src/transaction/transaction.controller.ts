@@ -32,7 +32,6 @@ import { ServiceError, ServiceErrorCode } from '@/generated/proto/shared';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
 import { ServiceDiscoveryService } from '@/service-discovery/service-discovery.service';
-import { ServiceInstance } from '@/service-discovery/service-discovery.types';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
 import { CacheService } from '@/cache/cache.service';
 
@@ -43,9 +42,6 @@ import { CacheService } from '@/cache/cache.service';
 @UseInterceptors(LoggingInterceptor)
 export class TransactionController implements TransactionServiceController {
   private accountGrpcClientProxy: ClientGrpcProxy;
-  private fetchedInstancesAt = 0;
-  private accountServiceUrlIndex = 0;
-  private accountServiceInstances: ServiceInstance[] = [];
   private logger = new Logger(TransactionController.name);
 
   constructor(
@@ -288,16 +284,9 @@ export class TransactionController implements TransactionServiceController {
 
   private async getAccountService(): Promise<AccountServiceClient> {
     this.accountGrpcClientProxy?.close();
-    const now = Date.now();
 
-    if (now - this.fetchedInstancesAt > 30 * 1000) {
-      this.accountServiceInstances =
-        await this.serviceDiscoveryService.getInstances(ACCOUNT_SERVICE_NAME);
-
-      this.fetchedInstancesAt = now;
-    }
-
-    const instance = this.accountServiceInstances[this.accountServiceUrlIndex];
+    const instance =
+      await this.serviceDiscoveryService.getInstance(ACCOUNT_SERVICE_NAME);
 
     this.accountGrpcClientProxy = new ClientGrpcProxy({
       url: `${instance.host}:${instance.port}`,
@@ -308,12 +297,6 @@ export class TransactionController implements TransactionServiceController {
         includeDirs: [path.join(__dirname, '../proto')],
       },
     });
-
-    this.accountServiceUrlIndex++;
-
-    if (this.accountServiceUrlIndex == this.accountServiceInstances.length) {
-      this.accountServiceUrlIndex = 0;
-    }
 
     return this.accountGrpcClientProxy.getService(ACCOUNT_SERVICE_NAME);
   }
