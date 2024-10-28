@@ -4,11 +4,11 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 
 import { AppEnv } from '@/types/app-env';
+import { ACCOUNT_SERVICE_NAME } from '@/generated/proto/account_service';
 import {
   ServiceDiscoveryRequest,
   ServiceInstance,
 } from '@/service-discovery/service-discovery.types';
-import { TRANSACTION_SERVICE_NAME } from '@/generated/proto/transaction_service';
 
 @Injectable()
 export class ServiceDiscoveryService {
@@ -37,7 +37,7 @@ export class ServiceDiscoveryService {
     return res.data;
   }
 
-  async registerService(retryAttempts = 5): Promise<void> {
+  async registerService(retryAttempts = 5): Promise<boolean> {
     const grpcPort = this.config.get('GRPC_PORT');
     const grpcScheme = this.config.get('GRPC_SCHEME');
 
@@ -46,7 +46,7 @@ export class ServiceDiscoveryService {
     const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/health`;
 
     const data: ServiceDiscoveryRequest = {
-      name: TRANSACTION_SERVICE_NAME,
+      name: ACCOUNT_SERVICE_NAME,
       host: this.hostname,
       port: grpcPort,
       scheme: grpcScheme,
@@ -70,17 +70,16 @@ export class ServiceDiscoveryService {
         }),
       );
 
-      this.logger.log('Service registered');
+      return true;
     } catch (e) {
       this.logger.error(e);
 
       if (retryAttempts <= 0) {
-        this.logger.error('Error registering service');
-        return;
+        return false;
       }
 
       await new Promise((res) => setTimeout(res, retryInterval));
-      await this.registerService(retryAttempts - 1);
+      return await this.registerService(retryAttempts - 1);
     }
   }
 

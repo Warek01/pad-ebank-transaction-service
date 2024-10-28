@@ -31,7 +31,6 @@ import { Transaction } from '@/entities/transaction.entity';
 import { ServiceError, ServiceErrorCode } from '@/generated/proto/shared';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
-import { sleep } from '@/utils/sleep';
 import { ServiceDiscoveryService } from '@/service-discovery/service-discovery.service';
 import { ServiceInstance } from '@/service-discovery/service-discovery.types';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
