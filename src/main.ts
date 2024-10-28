@@ -2,7 +2,12 @@ import { ReflectionService } from '@grpc/reflection';
 import { NestFactory } from '@nestjs/core';
 import { GrpcOptions, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
-import { INestApplication, Logger, ShutdownSignal } from '@nestjs/common';
+import {
+  INestApplication,
+  Logger,
+  ShutdownSignal,
+  VersioningType,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Express } from 'express';
 import fs from 'fs/promises';
@@ -24,17 +29,35 @@ async function bootstrap() {
   const grpcPort = config.get('GRPC_PORT');
   const hostname = config.get('HOSTNAME');
 
+  app.enableCors({
+    origin: '*',
+    allowedHeaders: '*',
+    methods: '*',
+  });
+  app.setGlobalPrefix('/api');
+  app.enableVersioning({
+    type: VersioningType.URI,
+    prefix: 'v',
+    defaultVersion: '1',
+  });
+
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('eBank transaction service')
+    .setTitle('eBank Transaction Service')
     .setVersion('1.0.0')
     .addTag('Test', 'Test methods for testing the features')
     .addTag(
       'Health',
       'Healthcheck methods for service discovery and load balancing',
     )
+    .setDescription('Transaction Microservice HTTP methods')
+    .setBasePath('/api')
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('api', app, swaggerDocument);
+  SwaggerModule.setup('/docs', app, swaggerDocument, {
+    jsonDocumentUrl: '/docs/swagger.json',
+    customSiteTitle: 'Transaction Service docs',
+    useGlobalPrefix: true,
+  });
 
   const protosPath: string = path.join(__dirname, 'proto');
   const protoFiles: string[] = await fs.readdir(protosPath);
@@ -55,11 +78,6 @@ async function bootstrap() {
   };
 
   app.connectMicroservice(transactionGrpcOptions);
-  app.enableCors({
-    origin: '*',
-    allowedHeaders: '*',
-    methods: '*',
-  });
   app.enableShutdownHooks([ShutdownSignal.SIGTERM, ShutdownSignal.SIGINT]);
 
   await Promise.all([

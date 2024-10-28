@@ -43,7 +43,7 @@ export class ServiceDiscoveryService {
 
     const httpPort = parseInt(this.config.get('HTTP_PORT'));
     const httpScheme = this.config.get('HTTP_SCHEME');
-    const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/health`;
+    const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/api/v1/health`;
 
     const data: ServiceDiscoveryRequest = {
       name: TRANSACTION_SERVICE_NAME,

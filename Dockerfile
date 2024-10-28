@@ -38,6 +38,6 @@ EXPOSE 3000
 EXPOSE 3100
 EXPOSE 3200
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3  CMD curl --fail http://localhost:3000/health || exit
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3  CMD curl --fail http://localhost:3000/api/v1/health || exit
 
 ENTRYPOINT ["node", "dist/main.js"]
