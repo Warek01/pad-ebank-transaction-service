@@ -4,11 +4,11 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 
 import { AppEnv } from '@/types/app-env';
-import { ACCOUNT_SERVICE_NAME } from '@/generated/proto/account_service';
 import {
   ServiceDiscoveryRequest,
   ServiceInstance,
 } from '@/service-discovery/service-discovery.types';
+import { TRANSACTION_SERVICE_NAME } from '@/generated/proto/transaction_service';
 
 @Injectable()
 export class ServiceDiscoveryService {
@@ -46,7 +46,7 @@ export class ServiceDiscoveryService {
     const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/health`;
 
     const data: ServiceDiscoveryRequest = {
-      name: ACCOUNT_SERVICE_NAME,
+      name: TRANSACTION_SERVICE_NAME,
       host: this.hostname,
       port: grpcPort,
       scheme: grpcScheme,
