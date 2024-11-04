@@ -47,7 +47,7 @@ export class TransactionController implements TransactionServiceController {
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
-    private readonly serviceDiscoveryService: ServiceDiscoveryService,
+    private readonly sdService: ServiceDiscoveryService,
     private readonly cache: CacheService,
   ) {}
 
@@ -285,11 +285,11 @@ export class TransactionController implements TransactionServiceController {
   private async getAccountService(): Promise<AccountServiceClient> {
     this.accountGrpcClientProxy?.close();
 
-    const instance =
-      await this.serviceDiscoveryService.getInstance(ACCOUNT_SERVICE_NAME);
+    const instance = await this.sdService.getInstance('account-service');
+    const url = new URL(instance.grpcUri);
 
     this.accountGrpcClientProxy = new ClientGrpcProxy({
-      url: `${instance.host}:${instance.port}`,
+      url: `${url.host}:${url.port}`,
       package: ACCOUNT_SERVICE_PACKAGE_NAME,
       protoPath: path.join(__dirname, '../proto/account_service.proto'),
       loader: {

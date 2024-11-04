@@ -2,13 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
+import * as uuid from 'uuid';
 
 import { AppEnv } from '@/types/app-env';
-import {
-  ServiceDiscoveryRequest,
-  ServiceInstance,
-} from '@/service-discovery/service-discovery.types';
-import { TRANSACTION_SERVICE_NAME } from '@/generated/proto/transaction_service';
+import { ServiceDiscoveryEntry } from '@/service-discovery/service-discovery.types';
 
 @Injectable()
 export class ServiceDiscoveryService {
@@ -16,6 +13,7 @@ export class ServiceDiscoveryService {
 
   private readonly logger = new Logger(ServiceDiscoveryService.name);
   private readonly hostname: string;
+  private readonly id = uuid.v4();
 
   constructor(
     private readonly http: HttpService,
@@ -27,22 +25,27 @@ export class ServiceDiscoveryService {
     this.hostname = this.config.get('HOSTNAME');
   }
 
-  async getInstances(serviceName: string): Promise<ServiceInstance[]> {
-    const url =
-      this.config.get('SERVICE_DISCOVERY_HTTP_URL') +
-      `/api/v1/registry/${serviceName}`;
+  async getInstances(serviceName: string): Promise<ServiceDiscoveryEntry[]> {
+    const url = new URL(
+      `/api/v1/registry/${serviceName}`,
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL'),
+    );
 
-    const res = await firstValueFrom(this.http.get<ServiceInstance[]>(url));
+    const res = await firstValueFrom(
+      this.http.get<ServiceDiscoveryEntry[]>(url.toString()),
+    );
 
     return res.data;
   }
 
-  async getInstance(serviceName: string): Promise<ServiceInstance> {
-    const url =
-      this.config.get('SERVICE_DISCOVERY_HTTP_URL') +
-      `/api/v1/load-balancing/${serviceName}`;
-
-    const res = await firstValueFrom(this.http.get<ServiceInstance>(url));
+  async getInstance(serviceName: string): Promise<ServiceDiscoveryEntry> {
+    const url = new URL(
+      `/api/v1/load-balancing/${serviceName}`,
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL'),
+    );
+    const res = await firstValueFrom(
+      this.http.get<ServiceDiscoveryEntry>(url.toString()),
+    );
 
     return res.data;
   }
@@ -50,20 +53,22 @@ export class ServiceDiscoveryService {
   async registerService(retryAttempts = 5): Promise<boolean> {
     const grpcPort = this.config.get('GRPC_PORT');
     const grpcScheme = this.config.get('GRPC_SCHEME');
-
     const httpPort = parseInt(this.config.get('HTTP_PORT'));
     const httpScheme = this.config.get('HTTP_SCHEME');
-    const healthCheckUrl = `${httpScheme}://${this.hostname}:${httpPort}/api/v1/health`;
-    const healthPingUrl = `${httpScheme}://${this.hostname}:${httpPort}/api/v1/health/ping`;
 
-    const data: ServiceDiscoveryRequest = {
-      name: TRANSACTION_SERVICE_NAME,
-      host: this.hostname,
-      port: grpcPort,
-      scheme: grpcScheme,
-      healthPingUrl: healthPingUrl,
-      healthCheckUrl: healthCheckUrl,
+    const grpcUrl = `${grpcScheme}://${this.hostname}:${grpcPort}`;
+    const httpUrl = `${httpScheme}://${this.hostname}:${httpPort}`;
+    const healthCheckUrl = `${httpUrl}/api/v1/health`;
+    const healthPingUrl = `${healthCheckUrl}/ping`;
+
+    const data: ServiceDiscoveryEntry = {
+      name: 'transaction-service',
+      id: this.id,
       healthCheckInterval: this.healthcheckInterval,
+      grpcUri: grpcUrl,
+      healthCheckUri: healthCheckUrl,
+      healthPingUri: healthPingUrl,
+      httpUri: httpUrl,
     };
 
     const retryInterval = parseInt(
@@ -72,12 +77,14 @@ export class ServiceDiscoveryService {
     const requestTimeout = parseInt(
       this.config.get('SERVICE_DISCOVERY_REQUEST_TIMEOUT'),
     );
-    const requestUrl =
-      this.config.get('SERVICE_DISCOVERY_HTTP_URL') + '/api/v1/registry';
+    const requestUrl = new URL(
+      '/api/v1/registry',
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL'),
+    );
 
     try {
       await firstValueFrom(
-        this.http.post(requestUrl, data, {
+        this.http.post(requestUrl.toString(), data, {
           timeout: requestTimeout,
         }),
       );
@@ -96,11 +103,11 @@ export class ServiceDiscoveryService {
   }
 
   async unregisterService() {
-    const requestUrl =
-      this.config.get('SERVICE_DISCOVERY_HTTP_URL') +
-      '/api/v1/registry/' +
-      this.hostname;
+    const requestUrl = new URL(
+      `/api/v1/registry/${this.hostname}`,
+      this.config.get('SERVICE_DISCOVERY_HTTP_URL'),
+    );
 
-    await firstValueFrom(this.http.delete(requestUrl));
+    await firstValueFrom(this.http.delete(requestUrl.toString()));
   }
 }

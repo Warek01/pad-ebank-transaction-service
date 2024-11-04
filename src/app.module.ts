@@ -14,7 +14,8 @@ import { TimeoutInterceptor } from '@/interceptors/timeout.interceptor';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
 import { ConcurrencyModule } from '@/concurrency/concurrency.module';
 import { ThrottlingModule } from '@/throttling/throttling.module';
-import { PrometheusModule } from '@willsoto/nestjs-prometheus';
+import { TotalRequestsMetricsInterceptor } from '@/metrics/total-requests-metrics.interceptor';
+import { MetricsModule } from '@/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -40,7 +41,6 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
         namingStrategy: new SnakeNamingStrategy(),
       }),
     }),
-    PrometheusModule.register(),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (conf: ConfigService<AppEnv>) => [
@@ -61,6 +61,7 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     ServiceDiscoveryModule,
     ConcurrencyModule,
     ThrottlingModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -71,6 +72,10 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
     {
       provide: APP_INTERCEPTOR,
       useValue: new TimeoutInterceptor(seconds(10)),
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TotalRequestsMetricsInterceptor,
     },
   ],
   exports: [],
