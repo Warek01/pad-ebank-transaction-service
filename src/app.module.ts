@@ -14,6 +14,7 @@ import { TimeoutInterceptor } from '@/interceptors/timeout.interceptor';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
 import { ConcurrencyModule } from '@/concurrency/concurrency.module';
 import { ThrottlingModule } from '@/throttling/throttling.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { ThrottlingModule } from '@/throttling/throttling.module';
         namingStrategy: new SnakeNamingStrategy(),
       }),
     }),
+    PrometheusModule.register(),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (conf: ConfigService<AppEnv>) => [
