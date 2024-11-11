@@ -1,7 +1,5 @@
-#!/bin/bash
-
-OUTPUT=./src/generated/proto
-INPUT=./src/proto
+OUTPUT=.\\src\\generated\\proto
+INPUT=.\\src\\proto
 
 rm -rf $OUTPUT
 mkdir -p $OUTPUT
@@ -21,13 +19,13 @@ TS_ARGS=(
   removeEnumPrefix=true
 )
 
-./node_modules/.bin/protoc \
-    --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+.\\node_modules\\.bin\\protoc \
+    --plugin=.\\node_modules\\.bin\\protoc-gen-ts_proto.bat \
     --ts_proto_opt="$(IFS=, ; echo "${TS_ARGS[*]}")" \
     --js_out=$OUTPUT \
     --ts_proto_out=$OUTPUT \
     --proto_path=$INPUT \
-    $INPUT/*.proto
+    $INPUT\\*.proto
 
-# leave only type definitions
-rm -f $OUTPUT/*.js
+find "$OUTPUT" -name "*.js" -exec rm -f {} \;
+echo Protoc files generated

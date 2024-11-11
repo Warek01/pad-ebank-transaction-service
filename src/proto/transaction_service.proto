@@ -2,14 +2,26 @@ syntax = "proto3";
 
 package transaction_service;
 
+option csharp_namespace = "Gateway";
+
 import "shared.proto";
 
 service TransactionService {
-  rpc TransferCurrency (TransferData) returns (TransferResult);
-  rpc DepositCurrency (DepositData) returns (DepositResult);
-  rpc WithdrawCurrency (WithdrawData) returns (WithdrawResult);
+  rpc CreateTransaction(CreateTransactionData) returns (CreateTransactionResult);
   rpc GetHistory (GetHistoryOptions) returns (TransactionsHistory);
-  rpc CancelTransaction (CancelTransactionOptions) returns (CancelTransactionResult);
+}
+
+message CreateTransactionData {
+  TransactionType type = 1;
+  oneof data {
+    TransferData transfer_data = 2;
+    DepositData deposit_data = 3;
+    WithdrawData withdraw_data = 4;
+  }
+}
+
+message CreateTransactionResult {
+  shared.ServiceError error = 1;
 }
 
 message TransferData {
@@ -19,28 +31,16 @@ message TransferData {
   string dst_card_code = 4;
 }
 
-message TransferResult {
-  shared.ServiceError error = 1;
-}
-
 message DepositData {
   shared.Currency currency = 1;
   int32 amount = 2;
   string card_code = 3;
 }
 
-message DepositResult {
-  shared.ServiceError error = 1;
-}
-
 message WithdrawData {
   shared.Currency currency = 1;
   int32 amount = 2;
   string card_code = 3;
-}
-
-message WithdrawResult {
-  shared.ServiceError error = 1;
 }
 
 message GetHistoryOptions {
@@ -67,12 +67,4 @@ message Transaction {
 message TransactionsHistory {
   repeated Transaction transactions = 1;
   shared.ServiceError error = 2;
-}
-
-message CancelTransactionOptions {
-  string transaction_id = 1;
-}
-
-message CancelTransactionResult {
-  shared.ServiceError error = 1;
 }
