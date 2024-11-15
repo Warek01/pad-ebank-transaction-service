@@ -1,4 +1,4 @@
-import { Controller, Logger, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Controller, UseGuards, UseInterceptors } from '@nestjs/common';
 import { Metadata } from '@grpc/grpc-js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -15,9 +15,7 @@ import {
 import { Transaction } from '@/entities/transaction.entity';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
-import { ServiceDiscoveryService } from '@/service-discovery/service-discovery.service';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
-import { CacheService } from '@/cache/cache.service';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
@@ -25,13 +23,9 @@ import { CacheService } from '@/cache/cache.service';
 @UseInterceptors(ConcurrencyGrpcInterceptor)
 @UseInterceptors(LoggingInterceptor)
 export class TransactionController implements TransactionServiceController {
-  private logger = new Logger(TransactionController.name);
-
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
-    private readonly sdService: ServiceDiscoveryService,
-    private readonly cache: CacheService,
   ) {}
 
   async createTransaction(
@@ -68,14 +62,6 @@ export class TransactionController implements TransactionServiceController {
     request: GetHistoryOptions,
     metadata?: Metadata,
   ): Promise<TransactionsHistory> {
-    const key = `transaction-history-${request.cardCode.replaceAll(' ', '_')}-${request.year}-${request.month}`;
-    const cache = await this.cache.client.get(key);
-
-    if (cache) {
-      this.logger.log(`Returned from cache ${key}`);
-      return JSON.parse(cache) as TransactionsHistory;
-    }
-
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
@@ -89,7 +75,7 @@ export class TransactionController implements TransactionServiceController {
       .andWhere('t.timestamp < :dateMax', { dateMax: dateMax.toISOString() })
       .getMany();
 
-    const result = {
+    return {
       transactions: transactions.map(
         (t): ProtoTransaction => ({
           type: t.type,
@@ -101,10 +87,5 @@ export class TransactionController implements TransactionServiceController {
         }),
       ),
     };
-
-    await this.cache.client.set(key, JSON.stringify(result));
-    await this.cache.client.expire(key, 120);
-
-    return result;
   }
 }
