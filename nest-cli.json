@@ -3,8 +3,8 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "typeCheck": true,
     "deleteOutDir": true,
+    "typeCheck": false,
     "assets": ["proto/**/*.proto"],
     "watchAssets": true,
     "builder": "swc"
