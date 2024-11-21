@@ -4,18 +4,20 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import {
-  CreateTransactionData,
-  CreateTransactionResult,
-  GetHistoryOptions,
-  Transaction as ProtoTransaction,
+  ProtoCreateTransactionData,
+  ProtoCreateTransactionResult,
+  ProtoGetHistoryOptions,
+  ProtoTransaction,
+  ProtoTransactionsHistory,
   TransactionServiceController,
   TransactionServiceControllerMethods,
-  TransactionsHistory,
 } from '@/generated/proto/transaction_service';
 import { Transaction } from '@/entities/transaction.entity';
 import { ConcurrencyGrpcInterceptor } from '@/concurrency/concurrency.grpc.interceptor';
 import { ThrottlingGrpcGuard } from '@/throttling/throttling.grpc.guard';
 import { LoggingInterceptor } from '@/interceptors/logging.interceptor';
+import { TransactionType } from '@/enums/transaction-type.enum';
+import { Currency } from '@/enums/currency.enum';
 
 @Controller('transaction')
 @TransactionServiceControllerMethods()
@@ -29,29 +31,27 @@ export class TransactionController implements TransactionServiceController {
   ) {}
 
   async createTransaction(
-    request: CreateTransactionData,
+    request: ProtoCreateTransactionData,
     metadata?: Metadata,
-  ): Promise<CreateTransactionResult> {
+  ): Promise<ProtoCreateTransactionResult> {
     const transaction = new Transaction();
 
-    transaction.type = request.type;
+    transaction.type = request.type as TransactionType;
 
     if (request.depositData) {
-      transaction.currency = request.depositData.currency;
-      transaction.srcCardCode = request.depositData.cardCode;
+      transaction.currency = request.depositData.currency as Currency;
+      transaction.dstCardCode = request.depositData.cardCode;
       transaction.amount = request.depositData.amount;
     } else if (request.transferData) {
-      transaction.currency = request.transferData.currency;
+      transaction.currency = request.transferData.currency as Currency;
       transaction.srcCardCode = request.transferData.srcCardCode;
       transaction.dstCardCode = request.transferData.dstCardCode;
       transaction.amount = request.transferData.amount;
     } else if (request.withdrawData) {
-      transaction.currency = request.withdrawData.currency;
-      transaction.srcCardCode = request.withdrawData.cardCode;
+      transaction.currency = request.withdrawData.currency as Currency;
+      transaction.dstCardCode = request.withdrawData.cardCode;
       transaction.amount = request.withdrawData.amount;
     }
-
-    transaction.timestamp = new Date();
 
     await this.transactionRepo.save(transaction);
 
@@ -59,9 +59,9 @@ export class TransactionController implements TransactionServiceController {
   }
 
   async getHistory(
-    request: GetHistoryOptions,
+    request: ProtoGetHistoryOptions,
     metadata?: Metadata,
-  ): Promise<TransactionsHistory> {
+  ): Promise<ProtoTransactionsHistory> {
     const dateMin = new Date(request.year, request.month);
     const dateMax = new Date(dateMin);
     dateMax.setMonth(dateMax.getMonth() + 1);
@@ -71,8 +71,8 @@ export class TransactionController implements TransactionServiceController {
       .where('t.src_card_code = :code OR t.dst_card_code = :code', {
         code: request.cardCode,
       })
-      .andWhere('t.timestamp >= :dateMin', { dateMin: dateMin.toISOString() })
-      .andWhere('t.timestamp < :dateMax', { dateMax: dateMax.toISOString() })
+      .andWhere('t.createdAt >= :dateMin', { dateMin: dateMin.toISOString() })
+      .andWhere('t.createdAt < :dateMax', { dateMax: dateMax.toISOString() })
       .getMany();
 
     return {
@@ -83,7 +83,7 @@ export class TransactionController implements TransactionServiceController {
           dstCardCode: t.dstCardCode,
           srcCardCode: t.srcCardCode,
           transactionId: t.id,
-          date: t.timestamp.toISOString(),
+          date: t.createdAt.toISOString(),
         }),
       ),
     };

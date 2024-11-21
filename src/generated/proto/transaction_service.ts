@@ -8,96 +8,90 @@
 import { Metadata } from '@grpc/grpc-js';
 import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { Currency, ServiceError } from './shared';
+import { ProtoServiceError } from './shared';
 
 export const protobufPackage = 'transaction_service';
 
-export enum TransactionType {
-  DEPOSIT = 0,
-  WITHDRAW = 1,
-  TRANSFER = 2,
+export interface ProtoCreateTransactionData {
+  type: string;
+  transferData?: ProtoTransferData | null;
+  depositData?: ProtoDepositData | null;
+  withdrawData?: ProtoWithdrawData | null;
 }
 
-export interface CreateTransactionData {
-  type: TransactionType;
-  transferData?: TransferData | null;
-  depositData?: DepositData | null;
-  withdrawData?: WithdrawData | null;
+export interface ProtoCreateTransactionResult {
+  error?: ProtoServiceError | null;
 }
 
-export interface CreateTransactionResult {
-  error?: ServiceError | null;
-}
-
-export interface TransferData {
-  currency: Currency;
+export interface ProtoTransferData {
+  currency: string;
   amount: number;
   srcCardCode: string;
   dstCardCode: string;
 }
 
-export interface DepositData {
-  currency: Currency;
+export interface ProtoDepositData {
+  currency: string;
   amount: number;
   cardCode: string;
 }
 
-export interface WithdrawData {
-  currency: Currency;
+export interface ProtoWithdrawData {
+  currency: string;
   amount: number;
   cardCode: string;
 }
 
-export interface GetHistoryOptions {
+export interface ProtoGetHistoryOptions {
   cardCode: string;
   month: number;
   year: number;
 }
 
-export interface Transaction {
+export interface ProtoTransaction {
   transactionId: string;
-  type: TransactionType;
+  type: string;
   srcCardCode: string;
   dstCardCode: string;
   amount: number;
   date: string;
 }
 
-export interface TransactionsHistory {
-  transactions: Transaction[];
-  error?: ServiceError | null;
+export interface ProtoTransactionsHistory {
+  transactions: ProtoTransaction[];
+  error?: ProtoServiceError | null;
 }
 
 export const TRANSACTION_SERVICE_PACKAGE_NAME = 'transaction_service';
 
 export interface TransactionServiceClient {
   createTransaction(
-    request: CreateTransactionData,
+    request: ProtoCreateTransactionData,
     metadata?: Metadata,
-  ): Observable<CreateTransactionResult>;
+  ): Observable<ProtoCreateTransactionResult>;
 
   getHistory(
-    request: GetHistoryOptions,
+    request: ProtoGetHistoryOptions,
     metadata?: Metadata,
-  ): Observable<TransactionsHistory>;
+  ): Observable<ProtoTransactionsHistory>;
 }
 
 export interface TransactionServiceController {
   createTransaction(
-    request: CreateTransactionData,
+    request: ProtoCreateTransactionData,
     metadata?: Metadata,
   ):
-    | Promise<CreateTransactionResult>
-    | Observable<CreateTransactionResult>
-    | CreateTransactionResult;
+    | Promise<ProtoCreateTransactionResult>
+    | Observable<ProtoCreateTransactionResult>
+    | ProtoCreateTransactionResult;
 
   getHistory(
-    request: GetHistoryOptions,
+    request: ProtoGetHistoryOptions,
     metadata?: Metadata,
   ):
-    | Promise<TransactionsHistory>
-    | Observable<TransactionsHistory>
-    | TransactionsHistory;
+    | Promise<ProtoTransactionsHistory>
+    | Observable<ProtoTransactionsHistory>
+    | ProtoTransactionsHistory;
 }
 
 export function TransactionServiceControllerMethods() {

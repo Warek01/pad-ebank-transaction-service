@@ -8,183 +8,191 @@
 import { Metadata } from '@grpc/grpc-js';
 import { GrpcMethod, GrpcStreamMethod } from '@nestjs/microservices';
 import { Observable } from 'rxjs';
-import { Currency, ServiceError } from './shared';
+import { ProtoServiceError } from './shared';
 
 export const protobufPackage = 'account_service';
 
-export interface LoginCredentials {
+export interface ProtoLoginCredentials {
   email: string;
   password: string;
 }
 
-export interface AuthCredentials {
+export interface ProtoAuthCredentials {
   email: string;
   fullName: string;
 }
 
-export interface AuthResult {
-  credentials?: AuthCredentials | null;
-  error?: ServiceError | null;
+export interface ProtoAuthResult {
+  credentials?: ProtoAuthCredentials | null;
+  error?: ProtoServiceError | null;
 }
 
-export interface RegisterCredentials {
+export interface ProtoRegisterCredentials {
   email: string;
   password: string;
   fullName: string;
+  createdAt: number;
 }
 
-export interface GetProfileOptions {
+export interface ProtoGetProfileOptions {
   email: string;
 }
 
-export interface Profile {
+export interface ProtoProfile {
   email: string;
   fullName: string;
+  createdAt: number;
 }
 
-export interface GetProfileResult {
-  profile?: Profile | null;
-  error?: ServiceError | null;
+export interface ProtoGetProfileResult {
+  profile?: ProtoProfile | null;
+  error?: ProtoServiceError | null;
 }
 
-export interface AddCurrencyOptions {
-  currency: Currency;
+export interface ProtoAddCurrencyOptions {
+  currency: string;
   amount: number;
   cardCode: string;
 }
 
-export interface AddCurrencyResult {
-  error?: ServiceError | null;
+export interface ProtoAddCurrencyResult {
+  error?: ProtoServiceError | null;
 }
 
-export interface TransactionData {
-  currency: Currency;
+export interface ProtoTransactionData {
+  currency: string;
   amount: number;
   cardCode: string;
 }
 
-export interface CanPerformTransactionResult {
+export interface ProtoCanPerformTransactionResult {
   canPerform?: boolean | null;
-  error?: ServiceError | null;
+  error?: ProtoServiceError | null;
 }
 
-export interface ChangeCurrencyOptions {
-  currency: Currency;
+export interface ProtoChangeCurrencyOptions {
+  currency: string;
   cardCode: string;
 }
 
-export interface ChangeCurrencyResult {
-  error?: ServiceError | null;
+export interface ProtoChangeCurrencyResult {
+  error?: ProtoServiceError | null;
 }
 
-export interface CardIdentifier {
+export interface ProtoCardIdentifier {
   cardCode: string;
 }
 
-export interface BlockCardResult {
-  error?: ServiceError | null;
+export interface ProtoBlockCardResult {
+  error?: ProtoServiceError | null;
 }
 
-export interface UnblockCardResult {
-  error?: ServiceError | null;
+export interface ProtoUnblockCardResult {
+  error?: ProtoServiceError | null;
 }
 
 export const ACCOUNT_SERVICE_PACKAGE_NAME = 'account_service';
 
 export interface AccountServiceClient {
-  login(request: LoginCredentials, metadata?: Metadata): Observable<AuthResult>;
+  login(
+    request: ProtoLoginCredentials,
+    metadata?: Metadata,
+  ): Observable<ProtoAuthResult>;
 
   register(
-    request: RegisterCredentials,
+    request: ProtoRegisterCredentials,
     metadata?: Metadata,
-  ): Observable<AuthResult>;
+  ): Observable<ProtoAuthResult>;
 
   getProfile(
-    request: GetProfileOptions,
+    request: ProtoGetProfileOptions,
     metadata?: Metadata,
-  ): Observable<GetProfileResult>;
+  ): Observable<ProtoGetProfileResult>;
 
   addCurrency(
-    request: AddCurrencyOptions,
+    request: ProtoAddCurrencyOptions,
     metadata?: Metadata,
-  ): Observable<AddCurrencyResult>;
+  ): Observable<ProtoAddCurrencyResult>;
 
   canPerformTransaction(
-    request: TransactionData,
+    request: ProtoTransactionData,
     metadata?: Metadata,
-  ): Observable<CanPerformTransactionResult>;
+  ): Observable<ProtoCanPerformTransactionResult>;
 
   changeCurrency(
-    request: ChangeCurrencyOptions,
+    request: ProtoChangeCurrencyOptions,
     metadata?: Metadata,
-  ): Observable<ChangeCurrencyResult>;
+  ): Observable<ProtoChangeCurrencyResult>;
 
   blockCard(
-    request: CardIdentifier,
+    request: ProtoCardIdentifier,
     metadata?: Metadata,
-  ): Observable<BlockCardResult>;
+  ): Observable<ProtoBlockCardResult>;
 
   unblockCard(
-    request: CardIdentifier,
+    request: ProtoCardIdentifier,
     metadata?: Metadata,
-  ): Observable<UnblockCardResult>;
+  ): Observable<ProtoUnblockCardResult>;
 }
 
 export interface AccountServiceController {
   login(
-    request: LoginCredentials,
+    request: ProtoLoginCredentials,
     metadata?: Metadata,
-  ): Promise<AuthResult> | Observable<AuthResult> | AuthResult;
+  ): Promise<ProtoAuthResult> | Observable<ProtoAuthResult> | ProtoAuthResult;
 
   register(
-    request: RegisterCredentials,
+    request: ProtoRegisterCredentials,
     metadata?: Metadata,
-  ): Promise<AuthResult> | Observable<AuthResult> | AuthResult;
+  ): Promise<ProtoAuthResult> | Observable<ProtoAuthResult> | ProtoAuthResult;
 
   getProfile(
-    request: GetProfileOptions,
+    request: ProtoGetProfileOptions,
     metadata?: Metadata,
   ):
-    | Promise<GetProfileResult>
-    | Observable<GetProfileResult>
-    | GetProfileResult;
+    | Promise<ProtoGetProfileResult>
+    | Observable<ProtoGetProfileResult>
+    | ProtoGetProfileResult;
 
   addCurrency(
-    request: AddCurrencyOptions,
+    request: ProtoAddCurrencyOptions,
     metadata?: Metadata,
   ):
-    | Promise<AddCurrencyResult>
-    | Observable<AddCurrencyResult>
-    | AddCurrencyResult;
+    | Promise<ProtoAddCurrencyResult>
+    | Observable<ProtoAddCurrencyResult>
+    | ProtoAddCurrencyResult;
 
   canPerformTransaction(
-    request: TransactionData,
+    request: ProtoTransactionData,
     metadata?: Metadata,
   ):
-    | Promise<CanPerformTransactionResult>
-    | Observable<CanPerformTransactionResult>
-    | CanPerformTransactionResult;
+    | Promise<ProtoCanPerformTransactionResult>
+    | Observable<ProtoCanPerformTransactionResult>
+    | ProtoCanPerformTransactionResult;
 
   changeCurrency(
-    request: ChangeCurrencyOptions,
+    request: ProtoChangeCurrencyOptions,
     metadata?: Metadata,
   ):
-    | Promise<ChangeCurrencyResult>
-    | Observable<ChangeCurrencyResult>
-    | ChangeCurrencyResult;
+    | Promise<ProtoChangeCurrencyResult>
+    | Observable<ProtoChangeCurrencyResult>
+    | ProtoChangeCurrencyResult;
 
   blockCard(
-    request: CardIdentifier,
-    metadata?: Metadata,
-  ): Promise<BlockCardResult> | Observable<BlockCardResult> | BlockCardResult;
-
-  unblockCard(
-    request: CardIdentifier,
+    request: ProtoCardIdentifier,
     metadata?: Metadata,
   ):
-    | Promise<UnblockCardResult>
-    | Observable<UnblockCardResult>
-    | UnblockCardResult;
+    | Promise<ProtoBlockCardResult>
+    | Observable<ProtoBlockCardResult>
+    | ProtoBlockCardResult;
+
+  unblockCard(
+    request: ProtoCardIdentifier,
+    metadata?: Metadata,
+  ):
+    | Promise<ProtoUnblockCardResult>
+    | Observable<ProtoUnblockCardResult>
+    | ProtoUnblockCardResult;
 }
 
 export function AccountServiceControllerMethods() {

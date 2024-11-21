@@ -1,7 +1,7 @@
 import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Currency } from '@/generated/proto/shared';
-import { TransactionType } from '@/generated/proto/transaction_service';
+import { Currency } from '@/enums/currency.enum';
+import { TransactionType } from '@/enums/transaction-type.enum';
 
 @Entity('transactions')
 export class Transaction {
@@ -17,12 +17,12 @@ export class Transaction {
   @Column()
   amount: number;
 
-  @Column({ type: 'enum', enum: Currency })
+  @Column({ type: 'enum', enum: Currency, enumName: 'currency' })
   currency: Currency;
 
-  @Column({ type: 'enum', enum: TransactionType })
+  @Column({ type: 'enum', enum: TransactionType, enumName: 'transaction_type' })
   type: TransactionType;
 
   @Column({ type: 'timestamp without time zone' })
-  timestamp: Date;
+  createdAt: Date = new Date();
 }

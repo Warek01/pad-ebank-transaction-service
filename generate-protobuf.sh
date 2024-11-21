@@ -19,6 +19,9 @@ TS_ARGS=(
   useOptionals=messages
   unrecognizedEnum=false
   removeEnumPrefix=true
+  typePrefix=Proto
+  comments=true
+  useMapType=true
 )
 
 ./node_modules/.bin/protoc \

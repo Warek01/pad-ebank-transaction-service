@@ -8,7 +8,7 @@
 
 export const protobufPackage = 'shared';
 
-export enum ServiceErrorCode {
+export enum ProtoServiceErrorCode {
   UNKNOWN = 0,
   BAD_REQUEST = 400,
   UNAUTHORIZED = 401,
@@ -17,14 +17,8 @@ export enum ServiceErrorCode {
   INTERNAL = 500,
 }
 
-export enum Currency {
-  MDL = 0,
-  USD = 1,
-  EUR = 2,
-}
-
-export interface ServiceError {
-  code: ServiceErrorCode;
+export interface ProtoServiceError {
+  code: ProtoServiceErrorCode;
   message: string;
 }
 
